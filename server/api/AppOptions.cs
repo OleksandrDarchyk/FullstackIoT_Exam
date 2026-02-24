@@ -4,21 +4,21 @@ namespace Api;
 
 public sealed class AppOptions
 {
-    // DB
+    [Required, MinLength(1)]
     public string DbConnectionString { get; set; } = "";
 
-    // MQTT
-    public string MqttBroker { get; set; } = "broker.hivemq.com";
-    public int MqttPort { get; set; } = 1883;
+    [Required, MinLength(1)]
+    public string RedisConnectionString { get; set; } = "";
 
-    // JWT
-    [MinLength(16)]
-    public string JwtSecret { get; set; } = "dev-secret-change-me-please";
+    [Required, MinLength(1)]
+    public string MqttBroker { get; set; } = "";
 
-    // Optional stricter JWT settings
+    [Range(1, 65535)]
+    public int MqttPort { get; set; }
+
+    [Required, MinLength(32)]
+    public string JwtSecret { get; set; } = "";
+
     public string JwtIssuer { get; set; } = "";
     public string JwtAudience { get; set; } = "";
-
-    // Redis 
-    public string RedisConnectionString { get; set; } = "";
 }
