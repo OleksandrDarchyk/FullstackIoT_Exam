@@ -482,3 +482,16 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+**/bin/
+**/obj/
+**\\bin\\
+**\\obj\\
+
+# Rider/MSBuild BuildHost junk (can appear under bin\Debug in weird paths)
+**/BuildHost-*/
+**\\BuildHost-*/
+
+# Weird folders with backslash in name (macOS + some tools)
+**/bin\\*/
+**/obj\\*/

@@ -16,12 +16,12 @@ public sealed class WindmillDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("Windmill");
-
         modelBuilder.Entity<AppUser>(e =>
         {
             e.ToTable("app_user");
             e.HasKey(x => x.Id);
+
+            e.Property(x => x.Username).IsRequired();
             e.HasIndex(x => x.Username).IsUnique();
         });
 
@@ -29,21 +29,21 @@ public sealed class WindmillDbContext : DbContext
         {
             e.ToTable("farm");
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.ExternalFarmId).IsUnique();
         });
 
         modelBuilder.Entity<Turbine>(e =>
         {
             e.ToTable("turbine");
-            e.HasKey(x => x.Id);
+
+            // Natural key from MQTT: (farmId + turbineId)
+            e.HasKey(x => new { x.FarmId, x.TurbineId });
+
+            e.Property(x => x.TurbineId).IsRequired();
 
             e.HasOne(x => x.Farm)
                 .WithMany(f => f.Turbines)
                 .HasForeignKey(x => x.FarmId);
 
-            e.HasIndex(x => new { x.FarmId, x.ExternalTurbineId }).IsUnique();
-
-            e.HasAlternateKey(x => new { x.Id, x.FarmId });
             e.HasIndex(x => x.FarmId);
         });
 
@@ -52,14 +52,14 @@ public sealed class WindmillDbContext : DbContext
             e.ToTable("telemetry");
             e.HasKey(x => x.Id);
 
-            e.Property(x => x.PayloadJson).HasColumnType("jsonb");
+            e.Property(x => x.TurbineId).IsRequired();
 
             e.HasOne(x => x.Turbine)
                 .WithMany(t => t.Telemetry)
-                .HasForeignKey(x => new { x.TurbineId, x.FarmId })
-                .HasPrincipalKey(t => new { t.Id, t.FarmId });
+                .HasForeignKey(x => new { x.FarmId, x.TurbineId });
 
-            e.HasIndex(x => new { x.TurbineId, x.Ts });
+            // for charts
+            e.HasIndex(x => new { x.FarmId, x.TurbineId, x.Ts });
             e.HasIndex(x => new { x.FarmId, x.Ts });
         });
 
@@ -68,37 +68,43 @@ public sealed class WindmillDbContext : DbContext
             e.ToTable("alert");
             e.HasKey(x => x.Id);
 
-            e.Property(x => x.PayloadJson).HasColumnType("jsonb");
+            e.Property(x => x.Severity).IsRequired();
+            e.Property(x => x.Message).IsRequired();
 
             e.HasOne(x => x.Farm)
                 .WithMany(f => f.Alerts)
                 .HasForeignKey(x => x.FarmId);
 
+            // optional turbine relation (works when TurbineId != null)
             e.HasOne(x => x.Turbine)
                 .WithMany(t => t.Alerts)
-                .HasForeignKey(x => x.TurbineId);
+                .HasForeignKey(x => new { x.FarmId, x.TurbineId })
+                .IsRequired(false);
 
-            e.HasIndex(x => new { x.TurbineId, x.Ts });
-            e.HasIndex(x => new { x.IsActive, x.Severity, x.Ts });
+            e.HasIndex(x => new { x.FarmId, x.Ts });
+            e.HasIndex(x => new { x.FarmId, x.TurbineId, x.Ts });
+            e.HasIndex(x => new { x.FarmId, x.Severity, x.Ts });
         });
 
         modelBuilder.Entity<OperatorAction>(e =>
         {
-            e.ToTable("operator_command");
+            e.ToTable("operator_action");
             e.HasKey(x => x.Id);
 
-            e.Property(x => x.PayloadJson).HasColumnType("jsonb");
+            e.Property(x => x.Action).IsRequired();
+            e.Property(x => x.Status).IsRequired();
+            e.Property(x => x.TurbineId).IsRequired();
 
             e.HasOne(x => x.User)
                 .WithMany(u => u.OperatorActions)
-                .HasForeignKey(x => x.UserId);
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             e.HasOne(x => x.Turbine)
                 .WithMany(t => t.OperatorActions)
-                .HasForeignKey(x => new { x.TurbineId, x.FarmId })
-                .HasPrincipalKey(t => new { t.Id, t.FarmId });
+                .HasForeignKey(x => new { x.FarmId, x.TurbineId });
 
-            e.HasIndex(x => new { x.TurbineId, x.RequestedAt });
+            e.HasIndex(x => new { x.FarmId, x.TurbineId, x.RequestedAt });
             e.HasIndex(x => new { x.UserId, x.RequestedAt });
         });
     }

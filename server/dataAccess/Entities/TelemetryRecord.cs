@@ -1,3 +1,7 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace dataAccess.Entities;
 
 public sealed class TelemetryRecord
@@ -5,21 +9,29 @@ public sealed class TelemetryRecord
     public long Id { get; set; }
 
     public Guid FarmId { get; set; }
-    public Guid TurbineId { get; set; }
+
+    [MaxLength(200)]
+    public string TurbineId { get; set; } = "";
 
     public DateTimeOffset Ts { get; set; }
     public DateTimeOffset ReceivedAt { get; set; } = DateTimeOffset.UtcNow;
 
-    public double? WindSpeedMs { get; set; }
-    public double? WindDirectionDeg { get; set; }
-    public double? AirTemperatureC { get; set; }
+    public double? WindSpeed { get; set; }
+    public double? WindDirection { get; set; }
+    public double? AmbientTemperature { get; set; }
 
-    public double? PowerKw { get; set; }
-    public double? RotorRpm { get; set; }
-    public double? BladePitchDeg { get; set; }
-    public bool? IsRunning { get; set; }
-    public int? ReportingIntervalMs { get; set; }
+    public double? RotorSpeed { get; set; }
+    public double? PowerOutput { get; set; }
+    public double? NacelleDirection { get; set; }
 
+    public double? BladePitch { get; set; }
+    public double? GeneratorTemp { get; set; }
+    public double? GearboxTemp { get; set; }
+    public double? Vibration { get; set; }
+
+    public string? Status { get; set; } // "running"/"stopped"
+
+    [Column(TypeName = "jsonb")]
     public string PayloadJson { get; set; } = "{}";
 
     public Turbine Turbine { get; set; } = null!;
