@@ -7,5 +7,251 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
+export class TelemetryRealtimeClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
 
+    getTelemetry(connectionId: string | undefined, turbineId: string | undefined): Promise<RealtimeListenResponseOfListOfTelemetryRecord> {
+        let url_ = this.baseUrl + "/GetTelemetry?";
+        if (connectionId === null)
+            throw new globalThis.Error("The parameter 'connectionId' cannot be null.");
+        else if (connectionId !== undefined)
+            url_ += "connectionId=" + encodeURIComponent("" + connectionId) + "&";
+        if (turbineId === null)
+            throw new globalThis.Error("The parameter 'turbineId' cannot be null.");
+        else if (turbineId !== undefined)
+            url_ += "turbineId=" + encodeURIComponent("" + turbineId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetTelemetry(_response);
+        });
+    }
+
+    protected processGetTelemetry(response: Response): Promise<RealtimeListenResponseOfListOfTelemetryRecord> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RealtimeListenResponseOfListOfTelemetryRecord;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RealtimeListenResponseOfListOfTelemetryRecord>(null as any);
+    }
+
+    connect(): Promise<void> {
+        let url_ = this.baseUrl + "/sse";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processConnect(_response);
+        });
+    }
+
+    protected processConnect(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
+export class TurbineCommandClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    sendCommand(turbineId: string, command: any): Promise<void> {
+        let url_ = this.baseUrl + "/api/turbines/{turbineId}/command";
+        if (turbineId === undefined || turbineId === null)
+            throw new globalThis.Error("The parameter 'turbineId' must be defined.");
+        url_ = url_.replace("{turbineId}", encodeURIComponent("" + turbineId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(command);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processSendCommand(_response);
+        });
+    }
+
+    protected processSendCommand(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
+/** Returned by subscribe endpoints so the client knows which SSE group to listen on. */
+export interface RealtimeListenResponse {
+    group?: string;
+}
+
+/** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
+export interface RealtimeListenResponseOfListOfTelemetryRecord extends RealtimeListenResponse {
+    data?: TelemetryRecord[] | undefined;
+}
+
+export interface TelemetryRecord {
+    id?: number;
+    farmId?: string;
+    turbineId?: string;
+    ts?: string;
+    receivedAt?: string;
+    windSpeed?: number | undefined;
+    windDirection?: number | undefined;
+    ambientTemperature?: number | undefined;
+    rotorSpeed?: number | undefined;
+    powerOutput?: number | undefined;
+    nacelleDirection?: number | undefined;
+    bladePitch?: number | undefined;
+    generatorTemp?: number | undefined;
+    gearboxTemp?: number | undefined;
+    vibration?: number | undefined;
+    status?: string | undefined;
+    payloadJson?: string;
+    turbine?: Turbine;
+}
+
+export interface Turbine {
+    farmId?: string;
+    turbineId?: string;
+    name?: string | undefined;
+    location?: string | undefined;
+    createdAt?: string;
+    farm?: Farm;
+    telemetry?: TelemetryRecord[];
+    alerts?: Alert[];
+    operatorActions?: OperatorAction[];
+}
+
+export interface Farm {
+    id?: string;
+    name?: string | undefined;
+    createdAt?: string;
+    turbines?: Turbine[];
+    alerts?: Alert[];
+}
+
+export interface Alert {
+    id?: number;
+    farmId?: string;
+    turbineId?: string | undefined;
+    ts?: string;
+    receivedAt?: string;
+    severity?: string;
+    message?: string;
+    payloadJson?: string;
+    farm?: Farm;
+    turbine?: Turbine | undefined;
+}
+
+export interface OperatorAction {
+    id?: string;
+    farmId?: string;
+    turbineId?: string;
+    userId?: string;
+    action?: string;
+    payloadJson?: string;
+    requestedAt?: string;
+    status?: string;
+    validationError?: string | undefined;
+    user?: AppUser;
+    turbine?: Turbine;
+}
+
+export interface AppUser {
+    id?: string;
+    username?: string;
+    passwordHash?: string;
+    passwordSalt?: string;
+    role?: string;
+    createdAt?: string;
+    operatorActions?: OperatorAction[];
+}
+
+export class ApiException extends Error {
+    override message: string;
+    status: number;
+    response: string;
+    headers: { [key: string]: any; };
+    result: any;
+
+    constructor(message: string, status: number, response: string, headers: { [key: string]: any; }, result: any) {
+        super();
+
+        this.message = message;
+        this.status = status;
+        this.response = response;
+        this.headers = headers;
+        this.result = result;
+    }
+
+    protected isApiException = true;
+
+    static isApiException(obj: any): obj is ApiException {
+        return obj.isApiException === true;
+    }
+}
+
+function throwException(message: string, status: number, response: string, headers: { [key: string]: any; }, result?: any): any {
+    if (result !== null && result !== undefined)
+        throw result;
+    else
+        throw new ApiException(message, status, response, headers, null);
+}

@@ -21,4 +21,8 @@ public sealed class AppOptions
 
     public string JwtIssuer { get; set; } = "";
     public string JwtAudience { get; set; } = "";
+
+    [Required, MinLength(1)]
+    [MaxLength(200)]
+    public string FarmId { get; set; } = "";
 }
