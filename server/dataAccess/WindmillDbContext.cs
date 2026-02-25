@@ -29,6 +29,9 @@ public sealed class WindmillDbContext : DbContext
         {
             e.ToTable("farm");
             e.HasKey(x => x.Id);
+
+            e.Property(x => x.Id).IsRequired();
+            e.HasIndex(x => x.Id).IsUnique();
         });
 
         modelBuilder.Entity<Turbine>(e =>
@@ -38,6 +41,7 @@ public sealed class WindmillDbContext : DbContext
             // Natural key from MQTT: (farmId + turbineId)
             e.HasKey(x => new { x.FarmId, x.TurbineId });
 
+            e.Property(x => x.FarmId).IsRequired();
             e.Property(x => x.TurbineId).IsRequired();
 
             e.HasOne(x => x.Farm)
@@ -52,13 +56,14 @@ public sealed class WindmillDbContext : DbContext
             e.ToTable("telemetry");
             e.HasKey(x => x.Id);
 
+            e.Property(x => x.FarmId).IsRequired();
             e.Property(x => x.TurbineId).IsRequired();
 
             e.HasOne(x => x.Turbine)
                 .WithMany(t => t.Telemetry)
                 .HasForeignKey(x => new { x.FarmId, x.TurbineId });
 
-            // for charts
+            // charts / time series
             e.HasIndex(x => new { x.FarmId, x.TurbineId, x.Ts });
             e.HasIndex(x => new { x.FarmId, x.Ts });
         });
@@ -68,6 +73,7 @@ public sealed class WindmillDbContext : DbContext
             e.ToTable("alert");
             e.HasKey(x => x.Id);
 
+            e.Property(x => x.FarmId).IsRequired();
             e.Property(x => x.Severity).IsRequired();
             e.Property(x => x.Message).IsRequired();
 
@@ -91,6 +97,7 @@ public sealed class WindmillDbContext : DbContext
             e.ToTable("operator_action");
             e.HasKey(x => x.Id);
 
+            e.Property(x => x.FarmId).IsRequired();
             e.Property(x => x.Action).IsRequired();
             e.Property(x => x.Status).IsRequired();
             e.Property(x => x.TurbineId).IsRequired();

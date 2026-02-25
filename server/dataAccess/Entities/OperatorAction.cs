@@ -8,7 +8,8 @@ public sealed class OperatorAction
 {
     public Guid Id { get; set; }
 
-    public Guid FarmId { get; set; }
+    [MaxLength(200)]
+    public string FarmId { get; set; } = "";
 
     [MaxLength(200)]
     public string TurbineId { get; set; } = "";

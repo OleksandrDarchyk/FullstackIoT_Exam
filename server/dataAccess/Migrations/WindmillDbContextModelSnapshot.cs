@@ -30,8 +30,10 @@ namespace dataAccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<Guid>("FarmId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("FarmId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -104,9 +106,9 @@ namespace dataAccess.Migrations
 
             modelBuilder.Entity("dataAccess.Entities.Farm", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    b.Property<string>("Id")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -116,6 +118,9 @@ namespace dataAccess.Migrations
                         .HasColumnType("character varying(200)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Id")
+                        .IsUnique();
 
                     b.ToTable("farm", (string)null);
                 });
@@ -131,8 +136,10 @@ namespace dataAccess.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.Property<Guid>("FarmId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("FarmId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("PayloadJson")
                         .IsRequired()
@@ -180,8 +187,10 @@ namespace dataAccess.Migrations
                     b.Property<double?>("BladePitch")
                         .HasColumnType("double precision");
 
-                    b.Property<Guid>("FarmId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("FarmId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<double?>("GearboxTemp")
                         .HasColumnType("double precision");
@@ -236,8 +245,9 @@ namespace dataAccess.Migrations
 
             modelBuilder.Entity("dataAccess.Entities.Turbine", b =>
                 {
-                    b.Property<Guid>("FarmId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("FarmId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("TurbineId")
                         .HasMaxLength(200)
