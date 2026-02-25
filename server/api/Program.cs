@@ -12,6 +12,7 @@ using NSwag.Generation.Processors.Security;
 using StackExchange.Redis;
 using StateleSSE.AspNetCore;
 using StateleSSE.AspNetCore.Extensions;
+using StateleSSE.AspNetCore.GroupRealtime;
 
 namespace Api;
 
@@ -33,6 +34,7 @@ public class Program
         {
             var opts = sp.GetRequiredService<AppOptions>();
             db.UseNpgsql(opts.DbConnectionString);
+            db.AddEfRealtimeInterceptor(sp);
         });
 
         // SSE shutdown
@@ -48,6 +50,8 @@ public class Program
         });
 
         services.AddRedisSseBackplane();
+        services.AddEfRealtime();
+        services.AddGroupRealtime();
 
         // JWT
         services.AddAuthentication(options =>
