@@ -91,6 +91,9 @@ public class Program
                 options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
             });
+        
+        //Seed
+        services.AddScoped<WindmillSeeder>();
 
         // Swagger / OpenAPI (NSwag)
         services.AddOpenApiDocument(config =>
@@ -126,6 +129,12 @@ public class Program
         // Validate AppOptions
         var opts = app.Services.GetRequiredService<AppOptions>();
         Validator.ValidateObject(opts, new ValidationContext(opts), validateAllProperties: true);
+        //Seed data
+        using (var scope = app.Services.CreateScope())
+        {
+            var seeder = scope.ServiceProvider.GetRequiredService<WindmillSeeder>();
+            await seeder.SeedAsync();
+        }
 
         app.UseExceptionHandler();
 

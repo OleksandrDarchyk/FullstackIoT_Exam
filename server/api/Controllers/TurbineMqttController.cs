@@ -1,6 +1,7 @@
 using Api.DTO;
 using dataAccess;
 using dataAccess.Entities;
+using Microsoft.EntityFrameworkCore;
 using Mqtt.Controllers;
 
 namespace Api.Controllers;
@@ -20,6 +21,7 @@ public sealed class TurbineMqttController(
         TurbineTelemetryDto? data,
         CancellationToken ct)
     {
+        // Only accept our farm
         if (!string.Equals(farmId, opts.FarmId, StringComparison.OrdinalIgnoreCase))
             return;
 
@@ -29,7 +31,17 @@ public sealed class TurbineMqttController(
             return;
         }
 
-        await WindmillSeeder.EnsureFarmAndTurbinesAsync(db, opts.FarmId, ct);
+        // If turbines are seeded on startup, this should always be true.
+        // Keep the check to fail fast with a useful log instead of FK exception noise.
+        var turbineExists = await db.Turbines.AnyAsync(
+            t => t.FarmId == opts.FarmId && t.TurbineId == turbineId, ct);
+
+        if (!turbineExists)
+        {
+            logger.LogWarning("Unknown turbineId '{TurbineId}' for farm '{FarmId}'. Did you run seed on startup?",
+                turbineId, opts.FarmId);
+            return;
+        }
 
         db.Telemetry.Add(new TelemetryRecord
         {
@@ -66,6 +78,7 @@ public sealed class TurbineMqttController(
         TurbineAlertDto? data,
         CancellationToken ct)
     {
+        // Only accept our farm
         if (!string.Equals(farmId, opts.FarmId, StringComparison.OrdinalIgnoreCase))
             return;
 
@@ -75,7 +88,15 @@ public sealed class TurbineMqttController(
             return;
         }
 
-        await WindmillSeeder.EnsureFarmAndTurbinesAsync(db, opts.FarmId, ct);
+        var turbineExists = await db.Turbines.AnyAsync(
+            t => t.FarmId == opts.FarmId && t.TurbineId == turbineId, ct);
+
+        if (!turbineExists)
+        {
+            logger.LogWarning("Unknown turbineId '{TurbineId}' for farm '{FarmId}'. Did you run seed on startup?",
+                turbineId, opts.FarmId);
+            return;
+        }
 
         db.Alerts.Add(new Alert
         {

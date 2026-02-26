@@ -34,14 +34,13 @@ public sealed class TurbineCommandController(
         if (!Guid.TryParse(userIdRaw, out var userGuid))
             throw new ValidationException("UserId in token is not a GUID");
 
-        // FK safety (Farm + 4 Turbines)
-        await WindmillSeeder.EnsureFarmAndTurbinesAsync(db, opts.FarmId, ct);
-
+        // Seed should run on startup, so turbines should already exist.
         var turbineExists = await db.Turbines.AnyAsync(
             t => t.FarmId == opts.FarmId && t.TurbineId == turbineId, ct);
 
         if (!turbineExists)
-            throw new ValidationException($"Unknown turbineId '{turbineId}' for farm '{opts.FarmId}'");
+            throw new ValidationException(
+                $"Unknown turbineId '{turbineId}' for farm '{opts.FarmId}'. Did you run seed on startup?");
 
         var action = command.GetProperty("action").GetString() ?? "";
 
@@ -65,6 +64,7 @@ public sealed class TurbineCommandController(
         try
         {
             await mqtt.PublishAsync(topic, command.GetRawText());
+
             row.Status = "Sent";
             await db.SaveChangesAsync(ct);
 
@@ -94,6 +94,7 @@ public sealed class TurbineCommandController(
         switch (action)
         {
             case "setInterval":
+            {
                 if (!command.TryGetProperty("value", out var valueProp) || valueProp.ValueKind != JsonValueKind.Number)
                     throw new ValidationException("setInterval requires numeric 'value'");
 
@@ -101,8 +102,10 @@ public sealed class TurbineCommandController(
                 if (value is < 1 or > 60)
                     throw new ValidationException("setInterval value must be 1..60 seconds");
                 break;
+            }
 
             case "setPitch":
+            {
                 if (!command.TryGetProperty("angle", out var angleProp) || angleProp.ValueKind != JsonValueKind.Number)
                     throw new ValidationException("setPitch requires numeric 'angle'");
 
@@ -110,11 +113,14 @@ public sealed class TurbineCommandController(
                 if (angle < 0 || angle > 30)
                     throw new ValidationException("setPitch angle must be 0..30 degrees");
                 break;
+            }
 
             case "stop":
+            {
                 if (command.TryGetProperty("reason", out var reasonProp) && reasonProp.ValueKind != JsonValueKind.String)
                     throw new ValidationException("stop 'reason' must be a string if provided");
                 break;
+            }
 
             case "start":
                 break;
