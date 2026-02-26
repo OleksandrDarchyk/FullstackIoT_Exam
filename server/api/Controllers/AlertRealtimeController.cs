@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using dataAccess;
 using dataAccess.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,7 @@ public sealed class AlertRealtimeController(
     IRealtimeManager realtimeManager,
     WindmillDbContext db,
     AppOptions opts
-) : RealtimeControllerBase(backplane)
+) : ControllerBase
 {
     [HttpGet(nameof(GetAlerts))]
     public async Task<RealtimeListenResponse<List<Alert>>> GetAlerts(
@@ -21,6 +22,9 @@ public sealed class AlertRealtimeController(
         string? turbineId,
         CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(connectionId))
+            throw new ValidationException("connectionId is required");
+
         var hasTurbine = !string.IsNullOrWhiteSpace(turbineId);
         var group = hasTurbine ? $"alerts:{turbineId}" : "alerts";
 

@@ -7,6 +7,182 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
+export class AlertRealtimeClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getAlerts(connectionId: string | undefined, turbineId: string | null | undefined): Promise<RealtimeListenResponseOfListOfAlert> {
+        let url_ = this.baseUrl + "/GetAlerts?";
+        if (connectionId === null)
+            throw new globalThis.Error("The parameter 'connectionId' cannot be null.");
+        else if (connectionId !== undefined)
+            url_ += "connectionId=" + encodeURIComponent("" + connectionId) + "&";
+        if (turbineId !== undefined && turbineId !== null)
+            url_ += "turbineId=" + encodeURIComponent("" + turbineId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAlerts(_response);
+        });
+    }
+
+    protected processGetAlerts(response: Response): Promise<RealtimeListenResponseOfListOfAlert> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RealtimeListenResponseOfListOfAlert;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RealtimeListenResponseOfListOfAlert>(null as any);
+    }
+}
+
+export class AuthClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    register(dto: RegisterRequestDto): Promise<AuthResponseDto> {
+        let url_ = this.baseUrl + "/api/auth/register";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processRegister(_response);
+        });
+    }
+
+    protected processRegister(response: Response): Promise<AuthResponseDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AuthResponseDto;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuthResponseDto>(null as any);
+    }
+
+    login(dto: LoginRequestDto): Promise<AuthResponseDto> {
+        let url_ = this.baseUrl + "/api/auth/login";
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(dto);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processLogin(_response);
+        });
+    }
+
+    protected processLogin(response: Response): Promise<AuthResponseDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AuthResponseDto;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AuthResponseDto>(null as any);
+    }
+}
+
+export class SseClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    connect(): Promise<void> {
+        let url_ = this.baseUrl + "/sse";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processConnect(_response);
+        });
+    }
+
+    protected processConnect(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+}
+
 export class TelemetryRealtimeClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -56,36 +232,6 @@ export class TelemetryRealtimeClient {
             });
         }
         return Promise.resolve<RealtimeListenResponseOfListOfTelemetryRecord>(null as any);
-    }
-
-    connect(): Promise<void> {
-        let url_ = this.baseUrl + "/sse";
-        url_ = url_.replace(/[?&]$/, "");
-
-        let options_: RequestInit = {
-            method: "GET",
-            headers: {
-            }
-        };
-
-        return this.http.fetch(url_, options_).then((_response: Response) => {
-            return this.processConnect(_response);
-        });
-    }
-
-    protected processConnect(response: Response): Promise<void> {
-        const status = response.status;
-        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
-        if (status === 200) {
-            return response.text().then((_responseText) => {
-            return;
-            });
-        } else if (status !== 200 && status !== 204) {
-            return response.text().then((_responseText) => {
-            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
-            });
-        }
-        return Promise.resolve<void>(null as any);
     }
 }
 
@@ -143,8 +289,41 @@ export interface RealtimeListenResponse {
 }
 
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
-export interface RealtimeListenResponseOfListOfTelemetryRecord extends RealtimeListenResponse {
-    data?: TelemetryRecord[] | undefined;
+export interface RealtimeListenResponseOfListOfAlert extends RealtimeListenResponse {
+    data?: Alert[] | undefined;
+}
+
+export interface Alert {
+    id?: number;
+    farmId?: string;
+    turbineId?: string | undefined;
+    ts?: string;
+    receivedAt?: string;
+    severity?: string;
+    message?: string;
+    payloadJson?: string;
+    farm?: Farm;
+    turbine?: Turbine | undefined;
+}
+
+export interface Farm {
+    id?: string;
+    name?: string | undefined;
+    createdAt?: string;
+    turbines?: Turbine[];
+    alerts?: Alert[];
+}
+
+export interface Turbine {
+    farmId?: string;
+    turbineId?: string;
+    name?: string | undefined;
+    location?: string | undefined;
+    createdAt?: string;
+    farm?: Farm;
+    telemetry?: TelemetryRecord[];
+    alerts?: Alert[];
+    operatorActions?: OperatorAction[];
 }
 
 export interface TelemetryRecord {
@@ -166,39 +345,6 @@ export interface TelemetryRecord {
     status?: string | undefined;
     payloadJson?: string;
     turbine?: Turbine;
-}
-
-export interface Turbine {
-    farmId?: string;
-    turbineId?: string;
-    name?: string | undefined;
-    location?: string | undefined;
-    createdAt?: string;
-    farm?: Farm;
-    telemetry?: TelemetryRecord[];
-    alerts?: Alert[];
-    operatorActions?: OperatorAction[];
-}
-
-export interface Farm {
-    id?: string;
-    name?: string | undefined;
-    createdAt?: string;
-    turbines?: Turbine[];
-    alerts?: Alert[];
-}
-
-export interface Alert {
-    id?: number;
-    farmId?: string;
-    turbineId?: string | undefined;
-    ts?: string;
-    receivedAt?: string;
-    severity?: string;
-    message?: string;
-    payloadJson?: string;
-    farm?: Farm;
-    turbine?: Turbine | undefined;
 }
 
 export interface OperatorAction {
@@ -223,6 +369,28 @@ export interface AppUser {
     role?: string;
     createdAt?: string;
     operatorActions?: OperatorAction[];
+}
+
+export interface AuthResponseDto {
+    userId?: string;
+    username?: string;
+    role?: string;
+    token?: string;
+}
+
+export interface RegisterRequestDto {
+    username: string;
+    password: string;
+}
+
+export interface LoginRequestDto {
+    username: string;
+    password: string;
+}
+
+/** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
+export interface RealtimeListenResponseOfListOfTelemetryRecord extends RealtimeListenResponse {
+    data?: TelemetryRecord[] | undefined;
 }
 
 export class ApiException extends Error {

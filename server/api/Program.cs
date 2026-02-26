@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Api.Services;
 using dataAccess;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -106,6 +107,9 @@ public class Program
 
         // CORS
         services.AddCors();
+        services.AddSingleton<PasswordHashService>();
+        services.AddSingleton<JwtService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         // Errors
         services.AddProblemDetails();
