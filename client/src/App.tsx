@@ -1,59 +1,31 @@
-import { useEffect, useState } from "react";
+import { Link, Navigate, Route, Routes } from "react-router-dom";
 import "./App.css";
-import { api } from "./core/api";
-import { useRealtimeListen } from "./core/realtime/useRealtimeListen";
-import type { TelemetryRecord, TurbineDto } from "./generated-ts-client";
+import LoginPage from "./ui/pages/LoginPage";
+import TurbinesPage from "./ui/pages/TurbinesPage";
+import TurbinePage from "./ui/pages/TurbinePage";
 
-function App() {
-    const [turbines, setTurbines] = useState<TurbineDto[]>([]);
-    const [error, setError] = useState<string | null>(null);
-
-    const [telemetry, setTelemetry] = useState<TelemetryRecord[]>([]);
-    const [telemetryError, setTelemetryError] = useState<string | null>(null);
-
-    useEffect(() => {
-        api.turbines
-            .getAll()
-            .then(setTurbines)
-            .catch((e) => setError(String(e)));
-    }, []);
-
-    useRealtimeListen<TelemetryRecord[]>(
-        (id) => api.telemetryRealtime.getTelemetry(id, "turbine-alpha"),
-        (data) => setTelemetry(data),
-        [],
-        (err) => setTelemetryError(String(err))
-    );
-
-    const last = telemetry.length > 0 ? telemetry[telemetry.length - 1] : null;
-
+export default function App() {
     return (
         <div style={{ padding: 16 }}>
-            <h2>Turbines</h2>
+            <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Link to="/turbines" style={{ textDecoration: "none", fontWeight: 600 }}>
+                    Wind Farm Dashboard
+                </Link>
 
-            {error && <div style={{ marginTop: 12 }}>Error: {error}</div>}
+                <nav style={{ display: "flex", gap: 12 }}>
+                    <Link to="/turbines">Turbines</Link>
+                    <Link to="/login">Login</Link>
+                </nav>
+            </header>
 
-            <ul style={{ marginTop: 12 }}>
-                {turbines.map((t) => (
-                    <li key={t.turbineId}>
-                        {t.turbineId} — {t.name ?? "Unnamed"} ({t.location ?? "Unknown"})
-                    </li>
-                ))}
-            </ul>
-
-            <div style={{ marginTop: 24 }}>
-                <h3>Telemetry (turbine-alpha)</h3>
-
-                {telemetryError && <div>Error: {telemetryError}</div>}
-
-                <div>Items: {telemetry.length}</div>
-
-                <pre style={{ fontSize: 12, overflow: "auto", maxHeight: 240 }}>
-          {JSON.stringify(last, null, 2)}
-        </pre>
+            <div style={{ marginTop: 16 }}>
+                <Routes>
+                    <Route path="/" element={<Navigate to="/turbines" replace />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/turbines" element={<TurbinesPage />} />
+                    <Route path="/turbines/:turbineId" element={<TurbinePage />} />
+                </Routes>
             </div>
         </div>
     );
 }
-
-export default App;
