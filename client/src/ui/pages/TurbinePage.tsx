@@ -2,7 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 import { api } from "../../core/api";
 import { useRealtimeListen } from "../../core/realtime/useRealtimeListen";
-import type { TelemetryRecord } from "../generated-ts-client";
+import type { TelemetryRecord } from "../../generated-ts-client";
 
 export default function TurbinePage() {
     const { turbineId } = useParams<{ turbineId: string }>();
