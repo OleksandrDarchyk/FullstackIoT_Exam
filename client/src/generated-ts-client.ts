@@ -7,6 +7,57 @@
 /* eslint-disable */
 // ReSharper disable InconsistentNaming
 
+export class ActionsHistoryClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getActions(turbineId: string, limit: number | undefined): Promise<OperatorActionDto[]> {
+        let url_ = this.baseUrl + "/api/turbines/{turbineId}/actions?";
+        if (turbineId === undefined || turbineId === null)
+            throw new globalThis.Error("The parameter 'turbineId' must be defined.");
+        url_ = url_.replace("{turbineId}", encodeURIComponent("" + turbineId));
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url_ += "limit=" + encodeURIComponent("" + limit) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetActions(_response);
+        });
+    }
+
+    protected processGetActions(response: Response): Promise<OperatorActionDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as OperatorActionDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<OperatorActionDto[]>(null as any);
+    }
+}
+
 export class AlertRealtimeClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -54,6 +105,57 @@ export class AlertRealtimeClient {
             });
         }
         return Promise.resolve<RealtimeListenResponseOfListOfAlert>(null as any);
+    }
+}
+
+export class AlertsHistoryClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getAlerts(turbineId: string, limit: number | undefined): Promise<AlertDto[]> {
+        let url_ = this.baseUrl + "/api/turbines/{turbineId}/alerts?";
+        if (turbineId === undefined || turbineId === null)
+            throw new globalThis.Error("The parameter 'turbineId' must be defined.");
+        url_ = url_.replace("{turbineId}", encodeURIComponent("" + turbineId));
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url_ += "limit=" + encodeURIComponent("" + limit) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAlerts(_response);
+        });
+    }
+
+    protected processGetAlerts(response: Response): Promise<AlertDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AlertDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<AlertDto[]>(null as any);
     }
 }
 
@@ -183,6 +285,57 @@ export class SseClient {
     }
 }
 
+export class TelemetryHistoryClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getHistory(turbineId: string, limit: number | undefined): Promise<TelemetryPointDto[]> {
+        let url_ = this.baseUrl + "/api/turbines/{turbineId}/telemetry?";
+        if (turbineId === undefined || turbineId === null)
+            throw new globalThis.Error("The parameter 'turbineId' must be defined.");
+        url_ = url_.replace("{turbineId}", encodeURIComponent("" + turbineId));
+        if (limit === null)
+            throw new globalThis.Error("The parameter 'limit' cannot be null.");
+        else if (limit !== undefined)
+            url_ += "limit=" + encodeURIComponent("" + limit) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetHistory(_response);
+        });
+    }
+
+    protected processGetHistory(response: Response): Promise<TelemetryPointDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TelemetryPointDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TelemetryPointDto[]>(null as any);
+    }
+}
+
 export class TelemetryRealtimeClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -283,6 +436,59 @@ export class TurbineCommandClient {
     }
 }
 
+export class TurbinesReadClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getAll(): Promise<TurbineDto[]> {
+        let url_ = this.baseUrl + "/api/turbines";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetAll(_response);
+        });
+    }
+
+    protected processGetAll(response: Response): Promise<TurbineDto[]> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as TurbineDto[];
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<TurbineDto[]>(null as any);
+    }
+}
+
+export interface OperatorActionDto {
+    id?: string;
+    turbineId?: string;
+    requestedAt?: string;
+    action?: string;
+    status?: string;
+    validationError?: string | undefined;
+}
+
 /** Returned by subscribe endpoints so the client knows which SSE group to listen on. */
 export interface RealtimeListenResponse {
     group?: string;
@@ -371,6 +577,14 @@ export interface AppUser {
     operatorActions?: OperatorAction[];
 }
 
+export interface AlertDto {
+    id?: number;
+    turbineId?: string | undefined;
+    ts?: string;
+    severity?: string;
+    message?: string;
+}
+
 export interface AuthResponseDto {
     userId?: string;
     username?: string;
@@ -388,9 +602,28 @@ export interface LoginRequestDto {
     password: string;
 }
 
+export interface TelemetryPointDto {
+    turbineId?: string;
+    ts?: string;
+    windSpeed?: number | undefined;
+    powerOutput?: number | undefined;
+    rotorSpeed?: number | undefined;
+    generatorTemp?: number | undefined;
+    gearboxTemp?: number | undefined;
+    vibration?: number | undefined;
+    bladePitch?: number | undefined;
+    status?: string | undefined;
+}
+
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
 export interface RealtimeListenResponseOfListOfTelemetryRecord extends RealtimeListenResponse {
     data?: TelemetryRecord[] | undefined;
+}
+
+export interface TurbineDto {
+    turbineId?: string;
+    name?: string | undefined;
+    location?: string | undefined;
 }
 
 export class ApiException extends Error {
