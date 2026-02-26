@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using dataAccess;
 using dataAccess.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -13,15 +14,20 @@ public sealed class TelemetryRealtimeController(
     IRealtimeManager realtimeManager,
     WindmillDbContext db,
     AppOptions opts
-) : RealtimeControllerBase(backplane)
+) : ControllerBase
 {
-    // GET /GetTelemetry?connectionId=...&turbineId=turbine-alpha
     [HttpGet(nameof(GetTelemetry))]
     public async Task<RealtimeListenResponse<List<TelemetryRecord>>> GetTelemetry(
         string connectionId,
         string turbineId,
         CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(connectionId))
+            throw new ValidationException("connectionId is required");
+
+        if (string.IsNullOrWhiteSpace(turbineId))
+            throw new ValidationException("turbineId is required");
+
         var group = $"telemetry:{turbineId}";
 
         await backplane.Groups.AddToGroupAsync(connectionId, group);

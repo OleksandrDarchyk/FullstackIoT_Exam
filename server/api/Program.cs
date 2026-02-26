@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Api.Services;
 using dataAccess;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ using NSwag.Generation.Processors.Security;
 using StackExchange.Redis;
 using StateleSSE.AspNetCore;
 using StateleSSE.AspNetCore.Extensions;
+using StateleSSE.AspNetCore.GroupRealtime;
 
 namespace Api;
 
@@ -33,6 +35,7 @@ public class Program
         {
             var opts = sp.GetRequiredService<AppOptions>();
             db.UseNpgsql(opts.DbConnectionString);
+            db.AddEfRealtimeInterceptor(sp);
         });
 
         // SSE shutdown
@@ -48,6 +51,8 @@ public class Program
         });
 
         services.AddRedisSseBackplane();
+        services.AddEfRealtime();
+        services.AddGroupRealtime();
 
         // JWT
         services.AddAuthentication(options =>
@@ -102,6 +107,9 @@ public class Program
 
         // CORS
         services.AddCors();
+        services.AddSingleton<PasswordHashService>();
+        services.AddSingleton<JwtService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         // Errors
         services.AddProblemDetails();
