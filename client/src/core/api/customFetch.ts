@@ -1,34 +1,46 @@
-// Custom fetch used by all NSwag clients.
-// Adds JWT token automatically and handles API errors.
+import toast from "react-hot-toast";
+import { getJwt } from "../auth/jwt";
+import { ApiException } from "../../generated-ts-client";
 
-export const customFetch = {
-    async fetch(url: RequestInfo, init?: RequestInit): Promise<Response> {
+export async function customFetch(url: RequestInfo, init?: RequestInit): Promise<Response> {
+    const token = getJwt();
+    const headers = new Headers(init?.headers ?? {});
 
-        const token = localStorage.getItem("jwt");
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
-        const headers = new Headers(init?.headers);
+    let res: Response;
+    try {
+        res = await fetch(url, { ...init, headers });
+    } catch (e) {
+        toast.error("Network error. Please try again.");
+        throw e;
+    }
 
-        // Attach Authorization header if token exists
-        if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
+    // Don't show a toast here — NSwag may throw ApiException with more detail later.
+    return res;
+}
+
+// Adapter object NSwag constructors accept as the http parameter.
+export const customHttp = { fetch: customFetch };
+
+// Extracts a readable message from NSwag ApiException / ProblemDetails and shows a toast.
+export function showApiError(err: unknown) {
+    if (ApiException.isApiException(err)) {
+        // err.response is raw text — try to parse it as ProblemDetails JSON.
+        try {
+            const parsed = JSON.parse(err.response);
+            const msg =
+                parsed?.detail ||
+                parsed?.title ||
+                `Request failed (HTTP ${err.status})`;
+            toast.error(msg);
+            return;
+        } catch {
+            toast.error(`Request failed (HTTP ${err.status})`);
+            return;
         }
+    }
 
-        headers.set("Accept", "application/json");
-
-        const response = await fetch(url, {
-            ...init,
-            headers
-        });
-
-        // Show ProblemDetails error message if returned by backend
-        if (!response.ok) {
-            const clone = response.clone();
-            try {
-                const problem = await clone.json();
-                if (problem?.detail) alert(problem.detail);
-            } catch {}
-        }
-
-        return response;
-    },
-};
+    toast.error("Unexpected error");
+}

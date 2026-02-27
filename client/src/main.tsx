@@ -1,13 +1,18 @@
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import App from "./App";
+import { StreamProvider } from "./core/realtime/useStream";
 import "./index.css";
-import App from "./App.tsx";
 
-createRoot(document.getElementById("root")!).render(
-    <StrictMode>
+ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
         <BrowserRouter>
-            <App />
+            <StreamProvider>
+                <App />
+                <Toaster position="bottom-right" />
+            </StreamProvider>
         </BrowserRouter>
-    </StrictMode>
+    </React.StrictMode>
 );
