@@ -1,12 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using Api.DTO;
 using dataAccess;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/turbines/{turbineId}/telemetry")]
 public sealed class TelemetryHistoryController(WindmillDbContext db, AppOptions opts) : ControllerBase
 {
@@ -32,7 +34,8 @@ public sealed class TelemetryHistoryController(WindmillDbContext db, AppOptions 
 
         return rows.Select(x => new TelemetryPointDto(
             x.TurbineId, x.Ts,
-            x.WindSpeed, x.PowerOutput, x.RotorSpeed,
+            x.WindSpeed, x.WindDirection, x.AmbientTemperature,
+            x.PowerOutput, x.RotorSpeed, x.NacelleDirection,
             x.GeneratorTemp, x.GearboxTemp, x.Vibration,
             x.BladePitch, x.Status
         )).ToList();

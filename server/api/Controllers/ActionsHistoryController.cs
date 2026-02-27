@@ -1,12 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using Api.DTO;
 using dataAccess;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/turbines/{turbineId}/actions")]
 public sealed class ActionsHistoryController(WindmillDbContext db, AppOptions opts) : ControllerBase
 {

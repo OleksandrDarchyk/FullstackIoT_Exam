@@ -1,5 +1,5 @@
 import toast from "react-hot-toast";
-import { getJwt } from "../auth/jwt";
+import { getJwt, clearJwt } from "../auth/jwt";
 import { ApiException } from "../../generated-ts-client";
 
 export async function customFetch(url: RequestInfo, init?: RequestInit): Promise<Response> {
@@ -15,6 +15,11 @@ export async function customFetch(url: RequestInfo, init?: RequestInit): Promise
     } catch (e) {
         toast.error("Network error. Please try again.");
         throw e;
+    }
+
+    if (res.status === 401) {
+        clearJwt();
+        window.location.href = "/login";
     }
 
     // Don't show a toast here — NSwag may throw ApiException with more detail later.
