@@ -22,14 +22,18 @@ import {
 
 import type {
     OperatorActionDto,
+    TelemetryPointDto,
     TelemetryRecord,
     TurbineDto,
 } from "../../generated-ts-client";
 
 type MetricKey =
     | "windSpeed"
+    | "windDirection"
+    | "ambientTemperature"
     | "powerOutput"
     | "rotorSpeed"
+    | "nacelleDirection"
     | "generatorTemp"
     | "gearboxTemp"
     | "vibration"
@@ -43,8 +47,11 @@ type TurbineCommand =
 
 const metricOptions: { key: MetricKey; label: string; unit: string }[] = [
     { key: "windSpeed", label: "Wind Speed", unit: "m/s" },
+    { key: "windDirection", label: "Wind Direction", unit: "°" },
+    { key: "ambientTemperature", label: "Ambient Temp", unit: "°C" },
     { key: "powerOutput", label: "Power Output", unit: "MW" },
     { key: "rotorSpeed", label: "Rotor Speed", unit: "rpm" },
+    { key: "nacelleDirection", label: "Nacelle Direction", unit: "°" },
     { key: "generatorTemp", label: "Generator Temp", unit: "°C" },
     { key: "gearboxTemp", label: "Gearbox Temp", unit: "°C" },
     { key: "vibration", label: "Vibration", unit: "" },
@@ -65,6 +72,7 @@ export default function TurbineDetailsPage() {
 
     const [actions, setActions] = useState<OperatorActionDto[]>([]);
     const [turbine, setTurbine] = useState<TurbineDto | null>(null);
+    const [chartHistory, setChartHistory] = useState<TelemetryPointDto[]>([]);
 
     // controls state
     const [stopReason, setStopReason] = useState("");
@@ -86,6 +94,14 @@ export default function TurbineDetailsPage() {
         })();
     }, [id]);
 
+    useEffect(() => {
+        if (!id) return;
+        const limit = range === "10m" ? 200 : range === "1h" ? 600 : 2000;
+        api.telemetryHistory.getHistory(id, limit)
+            .then((data) => setChartHistory(data ?? []))
+            .catch(showApiError);
+    }, [id, range]);
+
     async function loadActions() {
         try {
             const res = await api.actionsHistory.getActions(id, 50);
@@ -102,7 +118,6 @@ export default function TurbineDetailsPage() {
     }, [id]);
 
     const chartData = useMemo(() => {
-        const list = telemetryList ?? [];
         const now = Date.now();
         const ms =
             range === "10m"
@@ -111,17 +126,16 @@ export default function TurbineDetailsPage() {
                     ? 60 * 60_000
                     : 24 * 60 * 60_000;
 
-        return list
+        return chartHistory
             .filter((x) => {
                 const t = x.ts ? Date.parse(x.ts) : 0;
                 return t >= now - ms;
             })
-            .slice(-200)
             .map((x) => ({
                 time: hhmmss(x.ts),
-                value: (x as Record<MetricKey, number | undefined>)[metric],
+                value: (x as Record<string, number | undefined>)[metric],
             }));
-    }, [telemetryList, metric, range]);
+    }, [chartHistory, metric, range]);
 
     async function sendCommand(command: TurbineCommand) {
         if (!loggedIn) {

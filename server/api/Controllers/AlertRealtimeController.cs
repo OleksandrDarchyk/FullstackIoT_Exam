@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using dataAccess;
 using dataAccess.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StateleSSE.AspNetCore;
@@ -9,6 +10,7 @@ using StateleSSE.AspNetCore.EfRealtime;
 namespace Api.Controllers;
 
 [ApiController]
+[Authorize]
 public sealed class AlertRealtimeController(
     ISseBackplane backplane,
     IRealtimeManager realtimeManager,

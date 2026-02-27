@@ -606,8 +606,11 @@ export interface TelemetryPointDto {
     turbineId?: string;
     ts?: string;
     windSpeed?: number | undefined;
+    windDirection?: number | undefined;
+    ambientTemperature?: number | undefined;
     powerOutput?: number | undefined;
     rotorSpeed?: number | undefined;
+    nacelleDirection?: number | undefined;
     generatorTemp?: number | undefined;
     gearboxTemp?: number | undefined;
     vibration?: number | undefined;
