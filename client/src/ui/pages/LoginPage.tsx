@@ -1,49 +1,72 @@
 import { useState } from "react";
-import { api } from "../../core/api";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { api } from "../../core/api/api";
+import { setJwt } from "../../core/auth/jwt";
+import { showApiError } from "../../core/api/customFetch";
 
 export default function LoginPage() {
-    const [username, setUsername] = useState("test");
-    const [password, setPassword] = useState("pass1234");
+    const nav = useNavigate();
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+
+    async function onLogin() {
+        try {
+            const res = await api.auth.login({ username, password });
+            if (!res?.token) {
+                toast.error("Login failed");
+                return;
+            }
+            setJwt(res.token);
+            toast.success("Logged in");
+            nav("/turbines");
+        } catch (e) {
+            showApiError(e);
+        }
+    }
 
     return (
-        <div style={{ maxWidth: 360 }}>
-            <h2>Login</h2>
+        <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
+            <div className="card w-full max-w-md bg-base-100 shadow">
+                <div className="card-body">
+                    <h1 className="card-title text-2xl">Login</h1>
+                    <p className="opacity-70">
+                        Guest can view data; commands require login.
+                    </p>
 
-            <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-                <input
-                    placeholder="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                />
+                    <div className="divider" />
 
-                <input
-                    placeholder="Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+                    <label className="form-control w-full">
+                        <div className="label">
+                            <span className="label-text">Username</span>
+                        </div>
+                        <input
+                            className="input input-bordered w-full"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            autoComplete="username"
+                        />
+                    </label>
 
-                <button
-                    onClick={() => {
-                        api.auth.login({ username, password }).then((r) => {
-                            localStorage.setItem("jwt", r.token);
-                            alert("Logged in");
-                        });
-                    }}
-                >
-                    Sign in
-                </button>
+                    <label className="form-control w-full mt-2">
+                        <div className="label">
+                            <span className="label-text">Password</span>
+                        </div>
+                        <input
+                            className="input input-bordered w-full"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            autoComplete="current-password"
+                        />
+                    </label>
 
-                <button
-                    onClick={() => {
-                        api.auth.register({ username, password }).then((r) => {
-                            localStorage.setItem("jwt", r.token);
-                            alert("Account created");
-                        });
-                    }}
-                >
-                    Create account
-                </button>
+                    <div className="card-actions mt-4">
+                        <button className="btn btn-primary w-full" onClick={onLogin}>
+                            Sign In
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

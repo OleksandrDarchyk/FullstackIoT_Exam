@@ -28,7 +28,7 @@ public sealed class TelemetryHistoryController(WindmillDbContext db, AppOptions 
             .Take(limit)
             .ToListAsync(ct);
 
-        rows.Reverse(); // щоб графік ішов по часу зліва -> вправо
+        rows.Reverse(); 
 
         return rows.Select(x => new TelemetryPointDto(
             x.TurbineId, x.Ts,
