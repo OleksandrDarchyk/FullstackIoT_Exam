@@ -5,22 +5,22 @@ import { api } from "../../core/api/api";
 import { setJwt } from "../../core/auth/jwt";
 import { showApiError } from "../../core/api/customFetch";
 
-export default function LoginPage() {
+export default function RegisterPage() {
     const nav = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
-    async function onLogin() {
+    async function onRegister() {
         setLoading(true);
         try {
-            const res = await api.auth.login({ username, password });
+            const res = await api.auth.register({ username, password });
             if (!res?.token) {
-                toast.error("Login failed");
+                toast.error("Registration failed");
                 return;
             }
             setJwt(res.token);
-            toast.success("Logged in");
+            toast.success("Account created!");
             nav("/turbines");
         } catch (e) {
             showApiError(e);
@@ -34,9 +34,9 @@ export default function LoginPage() {
             <div className="card w-full max-w-sm bg-base-100 shadow-xl">
                 <div className="card-body gap-4">
                     <div>
-                        <h1 className="card-title text-2xl">Sign in</h1>
+                        <h1 className="card-title text-2xl">Create account</h1>
                         <p className="text-sm opacity-60 mt-1">
-                            Guest can view data; commands require login.
+                            Operators can send commands to turbines.
                         </p>
                     </div>
 
@@ -45,7 +45,7 @@ export default function LoginPage() {
                         <input
                             type="text"
                             className="input input-bordered w-full"
-                            placeholder="your username"
+                            placeholder="min. 3 characters"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             autoComplete="username"
@@ -57,27 +57,27 @@ export default function LoginPage() {
                         <input
                             type="password"
                             className="input input-bordered w-full"
-                            placeholder="your password"
+                            placeholder="min. 6 characters"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            autoComplete="current-password"
-                            onKeyDown={(e) => e.key === "Enter" && onLogin()}
+                            autoComplete="new-password"
+                            onKeyDown={(e) => e.key === "Enter" && onRegister()}
                         />
                     </fieldset>
 
                     <button
                         className="btn btn-primary w-full mt-2"
-                        onClick={onLogin}
+                        onClick={onRegister}
                         disabled={loading}
                     >
                         {loading && <span className="loading loading-spinner loading-sm" />}
-                        Sign In
+                        Register
                     </button>
 
                     <p className="text-center text-sm opacity-60">
-                        No account?{" "}
-                        <Link to="/register" className="link link-primary">
-                            Create one
+                        Already have an account?{" "}
+                        <Link to="/login" className="link link-primary">
+                            Sign in
                         </Link>
                     </p>
                 </div>
