@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "../../core/api/api";
 import { setJwt } from "../../core/auth/jwt";
@@ -9,8 +9,10 @@ export default function LoginPage() {
     const nav = useNavigate();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
 
     async function onLogin() {
+        setLoading(true);
         try {
             const res = await api.auth.login({ username, password });
             if (!res?.token) {
@@ -22,50 +24,62 @@ export default function LoginPage() {
             nav("/turbines");
         } catch (e) {
             showApiError(e);
+        } finally {
+            setLoading(false);
         }
     }
 
     return (
         <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
-            <div className="card w-full max-w-md bg-base-100 shadow">
-                <div className="card-body">
-                    <h1 className="card-title text-2xl">Login</h1>
-                    <p className="opacity-70">
-                        Guest can view data; commands require login.
-                    </p>
+            <div className="card w-full max-w-sm bg-base-100 shadow-xl">
+                <div className="card-body gap-4">
+                    <div>
+                        <h1 className="card-title text-2xl">Sign in</h1>
+                        <p className="text-sm opacity-60 mt-1">
+                            Guest can view data; commands require login.
+                        </p>
+                    </div>
 
-                    <div className="divider" />
-
-                    <label className="form-control w-full">
-                        <div className="label">
-                            <span className="label-text">Username</span>
-                        </div>
+                    <fieldset className="fieldset">
+                        <legend className="fieldset-legend">Username</legend>
                         <input
+                            type="text"
                             className="input input-bordered w-full"
+                            placeholder="your username"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
                             autoComplete="username"
                         />
-                    </label>
+                    </fieldset>
 
-                    <label className="form-control w-full mt-2">
-                        <div className="label">
-                            <span className="label-text">Password</span>
-                        </div>
+                    <fieldset className="fieldset">
+                        <legend className="fieldset-legend">Password</legend>
                         <input
-                            className="input input-bordered w-full"
                             type="password"
+                            className="input input-bordered w-full"
+                            placeholder="your password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             autoComplete="current-password"
+                            onKeyDown={(e) => e.key === "Enter" && onLogin()}
                         />
-                    </label>
+                    </fieldset>
 
-                    <div className="card-actions mt-4">
-                        <button className="btn btn-primary w-full" onClick={onLogin}>
-                            Sign In
-                        </button>
-                    </div>
+                    <button
+                        className="btn btn-primary w-full mt-2"
+                        onClick={onLogin}
+                        disabled={loading}
+                    >
+                        {loading && <span className="loading loading-spinner loading-sm" />}
+                        Sign In
+                    </button>
+
+                    <p className="text-center text-sm opacity-60">
+                        No account?{" "}
+                        <Link to="/register" className="link link-primary">
+                            Create one
+                        </Link>
+                    </p>
                 </div>
             </div>
         </div>

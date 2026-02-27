@@ -593,13 +593,13 @@ export interface AuthResponseDto {
 }
 
 export interface RegisterRequestDto {
-    username: string;
-    password: string;
+    username?: string;
+    password?: string;
 }
 
 export interface LoginRequestDto {
-    username: string;
-    password: string;
+    username?: string;
+    password?: string;
 }
 
 export interface TelemetryPointDto {
