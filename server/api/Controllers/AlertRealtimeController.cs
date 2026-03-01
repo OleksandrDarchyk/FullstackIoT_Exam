@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Api.DTO;
 using dataAccess;
 using dataAccess.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +18,7 @@ public sealed class AlertRealtimeController(
 ) : ControllerBase
 {
     [HttpGet(nameof(GetAlerts))]
-    public async Task<RealtimeListenResponse<List<Alert>>> GetAlerts(
+    public async Task<RealtimeListenResponse<List<AlertDto>>> GetAlerts(
         string connectionId,
         string? turbineId,
         CancellationToken ct)
@@ -36,7 +37,7 @@ public sealed class AlertRealtimeController(
             criteria: snapshot => snapshot.HasAdded<Alert>(),
             query: async ctx =>
             {
-                var q = ctx.Alerts.Where(x => x.FarmId == opts.FarmId);
+                IQueryable<Alert> q = ctx.Alerts.Where(x => x.FarmId == opts.FarmId);
 
                 if (hasTurbine)
                     q = q.Where(x => x.TurbineId == turbineId);
@@ -44,6 +45,7 @@ public sealed class AlertRealtimeController(
                 return await q
                     .OrderByDescending(x => x.Ts)
                     .Take(50)
+                    .Select(x => new AlertDto(x.Id, x.TurbineId, x.Ts, x.Severity, x.Message))
                     .ToListAsync();
             }
         );
@@ -56,8 +58,9 @@ public sealed class AlertRealtimeController(
         var initial = await initialQuery
             .OrderByDescending(x => x.Ts)
             .Take(50)
+            .Select(x => new AlertDto(x.Id, x.TurbineId, x.Ts, x.Severity, x.Message))
             .ToListAsync(ct);
 
-        return new RealtimeListenResponse<List<Alert>>(group, initial);
+        return new RealtimeListenResponse<List<AlertDto>>(group, initial);
     }
 }
