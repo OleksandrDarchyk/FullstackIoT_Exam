@@ -2,24 +2,24 @@ import { useCallback, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { api } from "../api/api";
 import { useLiveQuery } from "./useLiveQuery";
-import type { Alert, TelemetryRecord } from "../../generated-ts-client";
+import type { AlertDto, TelemetryPointDto } from "../../generated-ts-client";
 
 export function useTelemetryLive(turbineId: string) {
     const subscribe = useCallback(async (connectionId: string) => {
-        if (!turbineId) return { group: undefined, data: undefined as TelemetryRecord[] | undefined };
+        if (!turbineId) return { group: undefined, data: undefined as TelemetryPointDto[] | undefined };
         return await api.telemetryRealtime.getTelemetry(connectionId, turbineId);
     }, [turbineId]);
 
-    return useLiveQuery<TelemetryRecord[]>(subscribe);
+    return useLiveQuery<TelemetryPointDto[]>(subscribe);
 }
 
 export function useAlertsLive(turbineId: string) {
     const subscribe = useCallback(async (connectionId: string) => {
-        if (!turbineId) return { group: undefined, data: undefined as Alert[] | undefined };
+        if (!turbineId) return { group: undefined, data: undefined as AlertDto[] | undefined };
         return await api.alertsRealtime.getAlerts(connectionId, turbineId);
     }, [turbineId]);
 
-    return useLiveQuery<Alert[]>(subscribe);
+    return useLiveQuery<AlertDto[]>(subscribe);
 }
 
 export function useAlertsLiveWithToast(turbineId: string) {
@@ -37,13 +37,13 @@ export function useAlertsLiveWithToast(turbineId: string) {
         if (!list) return;
 
         if (!initialized.current) {
-            list.forEach(a => { if (a.id != null) seenIds.current.add(a.id as number); });
+            list.forEach(a => { if (a.id != null) seenIds.current.add(a.id); });
             initialized.current = true;
             return;
         }
 
-        const fresh = list.filter(a => a.id != null && !seenIds.current.has(a.id as number));
-        fresh.forEach(a => seenIds.current.add(a.id as number));
+        const fresh = list.filter(a => a.id != null && !seenIds.current.has(a.id));
+        fresh.forEach(a => seenIds.current.add(a.id!));
         fresh.slice(0, 3).forEach(a => {
             const sev = (a.severity ?? "").toLowerCase();
             const msg = `${a.turbineId ?? "turbine"}: ${a.message ?? "alert"}`;
@@ -60,5 +60,5 @@ export function useAlertsLiveAll() {
         return await api.alertsRealtime.getAlerts(connectionId, undefined);
     }, []);
 
-    return useLiveQuery<Alert[]>(subscribe);
+    return useLiveQuery<AlertDto[]>(subscribe);
 }

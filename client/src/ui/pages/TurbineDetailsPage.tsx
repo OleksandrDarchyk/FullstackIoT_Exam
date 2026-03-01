@@ -24,7 +24,6 @@ import type {
     AlertDto,
     OperatorActionDto,
     TelemetryPointDto,
-    TelemetryRecord,
     TurbineDto,
 } from "../../generated-ts-client";
 
@@ -66,7 +65,10 @@ export default function TurbineDetailsPage() {
     const { data: telemetryList } = useTelemetryLive(id);
     const { data: alerts } = useAlertsLiveWithToast(id);
 
-    const latest: TelemetryRecord | undefined = telemetryList?.slice(-1)[0];
+    const latest: TelemetryPointDto | undefined = telemetryList?.reduce<TelemetryPointDto | undefined>(
+        (best, cur) => (!best || (cur.ts ?? "") > (best.ts ?? "") ? cur : best),
+        undefined
+    );
 
     const [metric, setMetric] = useState<MetricKey>("windSpeed");
     const [range, setRange] = useState<"10m" | "1h" | "24h">("10m");

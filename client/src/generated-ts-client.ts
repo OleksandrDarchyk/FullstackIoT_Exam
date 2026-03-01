@@ -68,7 +68,7 @@ export class AlertRealtimeClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getAlerts(connectionId: string | undefined, turbineId: string | null | undefined): Promise<RealtimeListenResponseOfListOfAlert> {
+    getAlerts(connectionId: string | undefined, turbineId: string | null | undefined): Promise<RealtimeListenResponseOfListOfAlertDto> {
         let url_ = this.baseUrl + "/GetAlerts?";
         if (connectionId === null)
             throw new globalThis.Error("The parameter 'connectionId' cannot be null.");
@@ -90,13 +90,13 @@ export class AlertRealtimeClient {
         });
     }
 
-    protected processGetAlerts(response: Response): Promise<RealtimeListenResponseOfListOfAlert> {
+    protected processGetAlerts(response: Response): Promise<RealtimeListenResponseOfListOfAlertDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RealtimeListenResponseOfListOfAlert;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RealtimeListenResponseOfListOfAlertDto;
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -104,7 +104,7 @@ export class AlertRealtimeClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<RealtimeListenResponseOfListOfAlert>(null as any);
+        return Promise.resolve<RealtimeListenResponseOfListOfAlertDto>(null as any);
     }
 }
 
@@ -350,7 +350,7 @@ export class TelemetryRealtimeClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getTelemetry(connectionId: string | undefined, turbineId: string | undefined): Promise<RealtimeListenResponseOfListOfTelemetryRecord> {
+    getTelemetry(connectionId: string | undefined, turbineId: string | undefined): Promise<RealtimeListenResponseOfListOfTelemetryPointDto> {
         let url_ = this.baseUrl + "/GetTelemetry?";
         if (connectionId === null)
             throw new globalThis.Error("The parameter 'connectionId' cannot be null.");
@@ -374,13 +374,13 @@ export class TelemetryRealtimeClient {
         });
     }
 
-    protected processGetTelemetry(response: Response): Promise<RealtimeListenResponseOfListOfTelemetryRecord> {
+    protected processGetTelemetry(response: Response): Promise<RealtimeListenResponseOfListOfTelemetryPointDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
             let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RealtimeListenResponseOfListOfTelemetryRecord;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RealtimeListenResponseOfListOfTelemetryPointDto;
             return result200;
             });
         } else if (status !== 200 && status !== 204) {
@@ -388,7 +388,7 @@ export class TelemetryRealtimeClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<RealtimeListenResponseOfListOfTelemetryRecord>(null as any);
+        return Promise.resolve<RealtimeListenResponseOfListOfTelemetryPointDto>(null as any);
     }
 }
 
@@ -501,86 +501,8 @@ export interface RealtimeListenResponse {
 }
 
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
-export interface RealtimeListenResponseOfListOfAlert extends RealtimeListenResponse {
-    data?: Alert[] | undefined;
-}
-
-export interface Alert {
-    id?: number;
-    farmId?: string;
-    turbineId?: string | undefined;
-    ts?: string;
-    receivedAt?: string;
-    severity?: string;
-    message?: string;
-    payloadJson?: string;
-    farm?: Farm;
-    turbine?: Turbine | undefined;
-}
-
-export interface Farm {
-    id?: string;
-    name?: string | undefined;
-    createdAt?: string;
-    turbines?: Turbine[];
-    alerts?: Alert[];
-}
-
-export interface Turbine {
-    farmId?: string;
-    turbineId?: string;
-    name?: string | undefined;
-    location?: string | undefined;
-    createdAt?: string;
-    farm?: Farm;
-    telemetry?: TelemetryRecord[];
-    alerts?: Alert[];
-    operatorActions?: OperatorAction[];
-}
-
-export interface TelemetryRecord {
-    id?: number;
-    farmId?: string;
-    turbineId?: string;
-    ts?: string;
-    receivedAt?: string;
-    windSpeed?: number | undefined;
-    windDirection?: number | undefined;
-    ambientTemperature?: number | undefined;
-    rotorSpeed?: number | undefined;
-    powerOutput?: number | undefined;
-    nacelleDirection?: number | undefined;
-    bladePitch?: number | undefined;
-    generatorTemp?: number | undefined;
-    gearboxTemp?: number | undefined;
-    vibration?: number | undefined;
-    status?: string | undefined;
-    payloadJson?: string;
-    turbine?: Turbine;
-}
-
-export interface OperatorAction {
-    id?: string;
-    farmId?: string;
-    turbineId?: string;
-    userId?: string;
-    action?: string;
-    payloadJson?: string;
-    requestedAt?: string;
-    status?: string;
-    validationError?: string | undefined;
-    user?: AppUser;
-    turbine?: Turbine;
-}
-
-export interface AppUser {
-    id?: string;
-    username?: string;
-    passwordHash?: string;
-    passwordSalt?: string;
-    role?: string;
-    createdAt?: string;
-    operatorActions?: OperatorAction[];
+export interface RealtimeListenResponseOfListOfAlertDto extends RealtimeListenResponse {
+    data?: AlertDto[] | undefined;
 }
 
 export interface AlertDto {
@@ -625,8 +547,8 @@ export interface TelemetryPointDto {
 }
 
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
-export interface RealtimeListenResponseOfListOfTelemetryRecord extends RealtimeListenResponse {
-    data?: TelemetryRecord[] | undefined;
+export interface RealtimeListenResponseOfListOfTelemetryPointDto extends RealtimeListenResponse {
+    data?: TelemetryPointDto[] | undefined;
 }
 
 export interface TurbineDto {
