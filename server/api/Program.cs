@@ -158,7 +158,7 @@ public class Program
         if (app.Environment.IsDevelopment())
         {
             app.GenerateApiClientsFromOpenApi(
-                    "../../client/src/generated-ts-client.ts",
+                    "../../client/src/api/genereted/generated-ts-client.ts",
                     "./openapi.json")
                 .GetAwaiter()
                 .GetResult();

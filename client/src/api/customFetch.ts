@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 import { getJwt, clearJwt } from "../auth/jwt";
-import { ApiException } from "../../generated-ts-client";
+import { ApiException } from "@api/genereted/generated-ts-client";
 
 export async function customFetch(url: RequestInfo, init?: RequestInit): Promise<Response> {
     const token = getJwt();

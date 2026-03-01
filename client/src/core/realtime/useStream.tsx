@@ -6,7 +6,7 @@ import React, {
     useRef,
     useState,
 } from "react";
-import { CONNECT_EVENT, SSE_URL } from "../config/BASE_URL";
+import { CONNECT_EVENT, SSE_URL } from "@config/BASE_URL";
 
 export type ConnectionStatus = "Connected" | "Reconnecting" | "Offline";
 

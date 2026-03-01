@@ -10,7 +10,7 @@ import {
     AlertsHistoryClient,
     ActionsHistoryClient,
     TurbineCommandClient,
-} from "../../generated-ts-client";
+} from "@api/genereted/generated-ts-client";
 
 export const api = {
     auth: new AuthClient(BASE_URL, customHttp),

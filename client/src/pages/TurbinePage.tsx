@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import TopBar from "../element/TopBar";
-import { api } from "../../core/api/api";
-import { showApiError } from "../../core/api/customFetch";
-import type { TurbineDto, TelemetryRecord } from "../../generated-ts-client";
-import { useAlertsLiveAll, useTelemetryLive } from "../../core/realtime/hooks";
-import { SeverityBadge, StatusBadge } from "../element/Badges";
-import { hhmmss, timeAgo } from "../../utils/time";
+import { api } from "@api/api";
+import { showApiError } from "@api/customFetch";
+import type { TurbineDto, TelemetryPointDto } from "@api/genereted/generated-ts-client";
+import { useAlertsLiveAll, useTelemetryLive } from "@core/realtime/hooks";
+import { SeverityBadge, StatusBadge } from "@ui/element/Badges";
+import { hhmmss, timeAgo } from "../utils/hooks/time";
 
 function TurbineCard({ t }: { t: TurbineDto }) {
     const id = t.turbineId ?? "";
     const { data } = useTelemetryLive(id);
-    const latest: TelemetryRecord | undefined = data?.slice(-1)[0];
+    const latest: TelemetryPointDto | undefined = data?.reduce<TelemetryPointDto | undefined>(
+        (best, cur) => (!best || (cur.ts ?? "") > (best.ts ?? "") ? cur : best),
+        undefined
+    );
 
     const wind = latest?.windSpeed;
     const power = latest?.powerOutput;
@@ -92,8 +94,6 @@ export default function TurbinesPage() {
 
     return (
         <>
-            <TopBar />
-
             <div className="min-h-screen bg-base-200">
                 <div className="max-w-6xl mx-auto p-4">
                     <div className="mb-4">

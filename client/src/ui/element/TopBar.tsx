@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import { clearJwt, isLoggedIn } from "../../core/auth/jwt";
-import { useStream } from "../../core/realtime/useStream";
+import { clearJwt, isLoggedIn } from "@auth/jwt";
+import { useStream } from "@core/realtime/useStream";
 
 export default function TopBar() {
     const nav = useNavigate();
