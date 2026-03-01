@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
 import { api } from "../api/api";
 import { useLiveQuery } from "./useLiveQuery";
 import type { Alert, TelemetryRecord } from "../../generated-ts-client";
@@ -19,6 +20,39 @@ export function useAlertsLive(turbineId: string) {
     }, [turbineId]);
 
     return useLiveQuery<Alert[]>(subscribe);
+}
+
+export function useAlertsLiveWithToast(turbineId: string) {
+    const base = useAlertsLive(turbineId);
+    const seenIds = useRef(new Set<number>());
+    const initialized = useRef(false);
+
+    useEffect(() => {
+        seenIds.current = new Set();
+        initialized.current = false;
+    }, [turbineId]);
+
+    useEffect(() => {
+        const list = base.data;
+        if (!list) return;
+
+        if (!initialized.current) {
+            list.forEach(a => { if (a.id != null) seenIds.current.add(a.id as number); });
+            initialized.current = true;
+            return;
+        }
+
+        const fresh = list.filter(a => a.id != null && !seenIds.current.has(a.id as number));
+        fresh.forEach(a => seenIds.current.add(a.id as number));
+        fresh.slice(0, 3).forEach(a => {
+            const sev = (a.severity ?? "").toLowerCase();
+            const msg = `${a.turbineId ?? "turbine"}: ${a.message ?? "alert"}`;
+            if (sev === "critical") toast.error(msg);
+            else toast(msg, { icon: "⚠️" });
+        });
+    }, [base.data]);
+
+    return base;
 }
 
 export function useAlertsLiveAll() {

@@ -118,7 +118,7 @@ export class AlertsHistoryClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getAlerts(turbineId: string, limit: number | undefined): Promise<AlertDto[]> {
+    getAlerts(turbineId: string, limit: number | undefined, from: string | null | undefined, to: string | null | undefined): Promise<AlertDto[]> {
         let url_ = this.baseUrl + "/api/turbines/{turbineId}/alerts?";
         if (turbineId === undefined || turbineId === null)
             throw new globalThis.Error("The parameter 'turbineId' must be defined.");
@@ -127,6 +127,10 @@ export class AlertsHistoryClient {
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
             url_ += "limit=" + encodeURIComponent("" + limit) + "&";
+        if (from !== undefined && from !== null)
+            url_ += "from=" + encodeURIComponent("" + from) + "&";
+        if (to !== undefined && to !== null)
+            url_ += "to=" + encodeURIComponent("" + to) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -485,8 +489,10 @@ export interface OperatorActionDto {
     turbineId?: string;
     requestedAt?: string;
     action?: string;
+    payloadJson?: string;
     status?: string;
     validationError?: string | undefined;
+    username?: string;
 }
 
 /** Returned by subscribe endpoints so the client knows which SSE group to listen on. */

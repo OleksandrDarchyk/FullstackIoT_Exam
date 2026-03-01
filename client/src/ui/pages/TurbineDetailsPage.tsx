@@ -6,7 +6,7 @@ import TopBar from "../element/TopBar";
 import { api } from "../../core/api/api";
 import { showApiError } from "../../core/api/customFetch";
 import { isLoggedIn } from "../../core/auth/jwt";
-import { useAlertsLive, useTelemetryLive } from "../../core/realtime/hooks";
+import { useAlertsLiveWithToast, useTelemetryLive } from "../../core/realtime/hooks";
 import { SeverityBadge, StatusBadge } from "../element/Badges";
 import { hhmmss, timeAgo } from "../../utils/time";
 
@@ -21,6 +21,7 @@ import {
 } from "recharts";
 
 import type {
+    AlertDto,
     OperatorActionDto,
     TelemetryPointDto,
     TelemetryRecord,
@@ -63,7 +64,7 @@ export default function TurbineDetailsPage() {
     const id = turbineId ?? "";
 
     const { data: telemetryList } = useTelemetryLive(id);
-    const { data: alerts } = useAlertsLive(id);
+    const { data: alerts } = useAlertsLiveWithToast(id);
 
     const latest: TelemetryRecord | undefined = telemetryList?.slice(-1)[0];
 
@@ -73,6 +74,10 @@ export default function TurbineDetailsPage() {
     const [actions, setActions] = useState<OperatorActionDto[]>([]);
     const [turbine, setTurbine] = useState<TurbineDto | null>(null);
     const [chartHistory, setChartHistory] = useState<TelemetryPointDto[]>([]);
+
+    // alert history
+    const [alertHistoryPreset, setAlertHistoryPreset] = useState<"24h" | "7d">("24h");
+    const [alertHistory, setAlertHistory] = useState<AlertDto[]>([]);
 
     // controls state
     const [stopReason, setStopReason] = useState("");
@@ -117,6 +122,14 @@ export default function TurbineDetailsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
+    useEffect(() => {
+        if (!id) return;
+        const fromIso = new Date(Date.now() - (alertHistoryPreset === "24h" ? 86_400_000 : 7 * 86_400_000)).toISOString();
+        api.alertsHistory.getAlerts(id, 100, fromIso, null)
+            .then((data) => setAlertHistory(data ?? []))
+            .catch(showApiError);
+    }, [id, alertHistoryPreset]);
+
     const chartData = useMemo(() => {
         const now = Date.now();
         const ms =
@@ -139,7 +152,7 @@ export default function TurbineDetailsPage() {
 
     async function sendCommand(command: TurbineCommand) {
         if (!loggedIn) {
-            toast.error("Login required to send commands");
+            toast.error("Please sign in to send commands");
             return;
         }
 
@@ -304,9 +317,9 @@ export default function TurbineDetailsPage() {
 
                                     {!loggedIn && (
                                         <div className="alert alert-warning">
-                                            <span>Login required to send commands</span>
+                                            <span>Please sign in to send commands</span>
                                             <Link className="btn btn-sm" to="/login">
-                                                Go to Login
+                                                Sign in
                                             </Link>
                                         </div>
                                     )}
@@ -387,10 +400,10 @@ export default function TurbineDetailsPage() {
                                 </div>
                             </div>
 
-                            {/* Alerts */}
+                            {/* Live Alerts */}
                             <div className="card bg-base-100 shadow">
                                 <div className="card-body">
-                                    <h2 className="card-title">Alerts</h2>
+                                    <h2 className="card-title">Live Alerts</h2>
                                     <div className="divider" />
 
                                     {!alerts || alerts.length === 0 ? (
@@ -415,52 +428,106 @@ export default function TurbineDetailsPage() {
                                 </div>
                             </div>
 
-                            {/* Action history */}
-                            <div className="card bg-base-100 shadow">
-                                <div className="card-body">
-                                    <h2 className="card-title">Action History</h2>
-                                    <div className="divider" />
+                        </div>
+                    </div>
 
-                                    {actions.length === 0 ? (
-                                        <div className="opacity-70">No actions yet</div>
-                                    ) : (
-                                        <div className="grid gap-2">
+                    {/* Action History */}
+                    <div className="mt-4 card bg-base-100 shadow">
+                        <div className="card-body">
+                            <h2 className="card-title">Operator Actions</h2>
+                            <div className="divider" />
+
+                            {actions.length === 0 ? (
+                                <div className="opacity-70">No actions yet</div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>User</th>
+                                                <th>Action</th>
+                                                <th>Parameters</th>
+                                                <th>Result</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
                                             {actions.map((a) => {
                                                 const st = String(a.status ?? "").toLowerCase();
                                                 const statusCls =
                                                     st === "sent"
-                                                        ? "badge badge-success"
+                                                        ? "badge badge-success badge-sm"
                                                         : st === "failed"
-                                                            ? "badge badge-error"
-                                                            : "badge badge-warning";
-
+                                                            ? "badge badge-error badge-sm"
+                                                            : "badge badge-warning badge-sm";
                                                 return (
-                                                    <div key={String(a.id)} className="card bg-base-200">
-                                                        <div className="card-body p-4">
-                                                            <div className="flex items-center justify-between gap-3">
-                                                                <span className={statusCls}>{a.status ?? "—"}</span>
-                                                                <span className="text-xs opacity-60">
-                                  {hhmmss(a.requestedAt)}
-                                </span>
-                                                            </div>
-
-                                                            <div className="mt-2 font-extrabold">
-                                                                {a.action ?? "—"}
-                                                            </div>
-
+                                                    <tr key={String(a.id)}>
+                                                        <td className="text-xs opacity-70 whitespace-nowrap">{hhmmss(a.requestedAt)}</td>
+                                                        <td className="text-xs">{a.username ?? "—"}</td>
+                                                        <td className="font-semibold">{a.action ?? "—"}</td>
+                                                        <td className="text-xs opacity-70">{parseParams(a.payloadJson)}</td>
+                                                        <td>
+                                                            <span className={statusCls}>{a.status ?? "—"}</span>
                                                             {a.validationError && (
-                                                                <div className="mt-2 text-sm text-error">
-                                                                    {a.validationError}
-                                                                </div>
+                                                                <div className="text-xs text-error mt-1">{a.validationError}</div>
                                                             )}
-                                                        </div>
-                                                    </div>
+                                                        </td>
+                                                    </tr>
                                                 );
                                             })}
-                                        </div>
-                                    )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Alert History */}
+                    <div className="mt-4 card bg-base-100 shadow">
+                        <div className="card-body">
+                            <div className="flex items-center justify-between gap-3">
+                                <h2 className="card-title">Alert History</h2>
+                                <div className="join">
+                                    <button
+                                        className={`btn btn-sm join-item ${alertHistoryPreset === "24h" ? "btn-primary" : "btn-ghost"}`}
+                                        onClick={() => setAlertHistoryPreset("24h")}
+                                    >
+                                        Last 24h
+                                    </button>
+                                    <button
+                                        className={`btn btn-sm join-item ${alertHistoryPreset === "7d" ? "btn-primary" : "btn-ghost"}`}
+                                        onClick={() => setAlertHistoryPreset("7d")}
+                                    >
+                                        Last 7 days
+                                    </button>
                                 </div>
                             </div>
+                            <div className="divider" />
+
+                            {alertHistory.length === 0 ? (
+                                <div className="opacity-70">No alerts in this period</div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Time</th>
+                                                <th>Severity</th>
+                                                <th>Message</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {alertHistory.map((a) => (
+                                                <tr key={String(a.id)}>
+                                                    <td className="text-xs opacity-70 whitespace-nowrap">{hhmmss(a.ts)}</td>
+                                                    <td><SeverityBadge severity={a.severity} /></td>
+                                                    <td>{a.message}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -469,6 +536,19 @@ export default function TurbineDetailsPage() {
             </div>
         </>
     );
+}
+
+function parseParams(payloadJson?: string): string {
+    if (!payloadJson) return "—";
+    try {
+        const obj = JSON.parse(payloadJson) as Record<string, unknown>;
+        const pairs = Object.entries(obj)
+            .filter(([k]) => k !== "action")
+            .map(([k, v]) => `${k}: ${v}`);
+        return pairs.length ? pairs.join(", ") : "—";
+    } catch {
+        return "—";
+    }
 }
 
 function MetricTile({

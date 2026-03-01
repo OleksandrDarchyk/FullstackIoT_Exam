@@ -1,19 +1,20 @@
 using System.ComponentModel.DataAnnotations;
 using Api.DTO;
 using dataAccess;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("api/turbines/{turbineId}/actions")]
 public sealed class ActionsHistoryController(WindmillDbContext db, AppOptions opts) : ControllerBase
 {
     [HttpGet]
-    public Task<List<OperatorActionDto>> GetActions(string turbineId, [FromQuery] int limit = 50, CancellationToken ct = default)
+    public Task<List<OperatorActionDto>> GetActions(
+        [FromRoute] string turbineId,
+        [FromQuery] int limit = 50,
+        CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(turbineId))
             throw new ValidationException("turbineId is required");
@@ -25,7 +26,10 @@ public sealed class ActionsHistoryController(WindmillDbContext db, AppOptions op
             .Where(x => x.FarmId == opts.FarmId && x.TurbineId == turbineId)
             .OrderByDescending(x => x.RequestedAt)
             .Take(limit)
-            .Select(x => new OperatorActionDto(x.Id, x.TurbineId, x.RequestedAt, x.Action, x.Status, x.ValidationError))
+            .Select(x => new OperatorActionDto(
+                x.Id, x.TurbineId, x.RequestedAt,
+                x.Action, x.PayloadJson, x.Status, x.ValidationError,
+                x.User.Username))
             .ToListAsync(ct);
     }
 }
