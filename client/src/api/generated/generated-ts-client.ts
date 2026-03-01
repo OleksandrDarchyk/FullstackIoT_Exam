@@ -299,7 +299,7 @@ export class TelemetryHistoryClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    getHistory(turbineId: string, limit: number | undefined): Promise<TelemetryPointDto[]> {
+    getHistory(turbineId: string, limit: number | undefined, from: string | null | undefined, to: string | null | undefined): Promise<TelemetryPointDto[]> {
         let url_ = this.baseUrl + "/api/turbines/{turbineId}/telemetry?";
         if (turbineId === undefined || turbineId === null)
             throw new globalThis.Error("The parameter 'turbineId' must be defined.");
@@ -308,6 +308,10 @@ export class TelemetryHistoryClient {
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
             url_ += "limit=" + encodeURIComponent("" + limit) + "&";
+        if (from !== undefined && from !== null)
+            url_ += "from=" + encodeURIComponent("" + from) + "&";
+        if (to !== undefined && to !== null)
+            url_ += "to=" + encodeURIComponent("" + to) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {

@@ -14,6 +14,8 @@ public sealed class TelemetryHistoryController(WindmillDbContext db, AppOptions 
     public async Task<List<TelemetryPointDto>> GetHistory(
         string turbineId,
         [FromQuery] int limit = 200,
+        [FromQuery] DateTimeOffset? from = null,
+        [FromQuery] DateTimeOffset? to = null,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(turbineId))
@@ -22,13 +24,24 @@ public sealed class TelemetryHistoryController(WindmillDbContext db, AppOptions 
         if (limit < 1 || limit > 2000)
             throw new ValidationException("limit must be 1..2000");
 
-        var rows = await db.Telemetry.AsNoTracking()
-            .Where(x => x.FarmId == opts.FarmId && x.TurbineId == turbineId)
+        if (from.HasValue && to.HasValue && from.Value > to.Value)
+            throw new ValidationException("'from' must be <= 'to'");
+
+        var q = db.Telemetry.AsNoTracking()
+            .Where(x => x.FarmId == opts.FarmId && x.TurbineId == turbineId);
+
+        if (from.HasValue)
+            q = q.Where(x => x.Ts >= from.Value);
+
+        if (to.HasValue)
+            q = q.Where(x => x.Ts <= to.Value);
+
+        var rows = await q
             .OrderByDescending(x => x.Ts)
             .Take(limit)
             .ToListAsync(ct);
 
-        rows.Reverse(); 
+        rows.Reverse();
 
         return rows.Select(x => new TelemetryPointDto(
             x.TurbineId, x.Ts,

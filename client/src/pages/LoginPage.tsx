@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { api } from "../../core/api/api";
-import { setJwt } from "../../core/auth/jwt";
-import { showApiError } from "../../core/api/customFetch";
+import { api } from "@api/api";
+import { setJwt } from "@auth/jwt";
+import { showApiError } from "@api/customFetch";
 
 export default function LoginPage() {
     const nav = useNavigate();

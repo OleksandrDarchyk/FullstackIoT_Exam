@@ -1,4 +1,4 @@
-import { BASE_URL } from "../config/BASE_URL";
+import { BASE_URL } from "./config";
 import { customHttp } from "./customFetch";
 
 import {
@@ -10,7 +10,7 @@ import {
     AlertsHistoryClient,
     ActionsHistoryClient,
     TurbineCommandClient,
-} from "../../generated-ts-client";
+} from "@api/generated/generated-ts-client";
 
 export const api = {
     auth: new AuthClient(BASE_URL, customHttp),

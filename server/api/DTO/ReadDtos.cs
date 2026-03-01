@@ -1,5 +1,31 @@
 namespace Api.DTO;
 
+public sealed record TurbineAlertDto(
+    string TurbineId,
+    string FarmId,
+    DateTimeOffset Timestamp,
+    string Severity,
+    string Message
+);
+
+public sealed record TurbineTelemetryDto(
+    string TurbineId,
+    string TurbineName,
+    string FarmId,
+    DateTimeOffset Timestamp,
+    double WindSpeed,
+    double WindDirection,
+    double AmbientTemperature,
+    double RotorSpeed,
+    double PowerOutput,
+    double NacelleDirection,
+    double BladePitch,
+    double GeneratorTemp,
+    double GearboxTemp,
+    double Vibration,
+    string Status
+);
+
 public sealed record TurbineDto(string TurbineId, string? Name, string? Location);
 
 public sealed record TelemetryPointDto(
