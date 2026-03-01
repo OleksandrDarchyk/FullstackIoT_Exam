@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { api } from "@api/api";
 import { showApiError } from "@api/customFetch";
 import { isLoggedIn } from "@auth/jwt";
-import type { TurbineCommand } from "@core/domain/turbineCommands";
+import type { TurbineCommand } from "./types";
 
 export function useTurbineCommands(turbineId: string) {
     const [sending, setSending] = useState(false);

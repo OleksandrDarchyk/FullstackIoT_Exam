@@ -4,11 +4,11 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "@api/api";
 import { showApiError } from "@api/customFetch";
 import { useAlertsLiveWithToast, useTelemetryLive } from "@core/realtime/hooks";
-import { SeverityBadge, StatusBadge } from "@ui/element/Badges";
-import { hhmmss, timeAgo } from "../utils/hooks/time";
+import { SeverityBadge, StatusBadge } from "@ui/Badges";
+import { hhmmss, timeAgo } from "../utils/time";
 
-import type { TurbineDto, TelemetryPointDto } from "@api/genereted/generated-ts-client";
-import type { TurbineCommand } from "@core/domain/turbineCommands";
+import type { TurbineDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
+import type { TurbineCommand } from "@features/turbine-details/types";
 
 import { useActionsHistory } from "@features/turbine-details/useActionsHistory";
 import { useAlertHistory } from "@features/turbine-details/useAlertHistory";

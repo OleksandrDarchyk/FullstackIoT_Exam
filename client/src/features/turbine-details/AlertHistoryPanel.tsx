@@ -1,7 +1,7 @@
-import type { AlertDto } from "@api/genereted/generated-ts-client";
+import type { AlertDto } from "@api/generated/generated-ts-client";
 import type { AlertPreset } from "./useAlertHistory";
-import { SeverityBadge } from "@ui/element/Badges";
-import { hhmmss } from "@utils/hooks/time";
+import { SeverityBadge } from "@ui/Badges";
+import { hhmmss } from "@utils/time";
 
 interface Props {
     alertHistory: AlertDto[];

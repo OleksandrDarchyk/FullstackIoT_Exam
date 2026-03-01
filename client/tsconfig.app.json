@@ -26,7 +26,6 @@
     "paths": {
       "@api/*": ["src/api/*"],
       "@auth/*": ["src/auth/*"],
-      "@config/*": ["src/config/*"],
       "@core/*": ["src/core/*"],
       "@features/*": ["src/features/*"],
       "@pages/*": ["src/pages/*"],

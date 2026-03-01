@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "@api/api";
 import { showApiError } from "@api/customFetch";
-import type { TurbineDto, TelemetryPointDto } from "@api/genereted/generated-ts-client";
+import type { TurbineDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
 import { useAlertsLiveAll, useTelemetryLive } from "@core/realtime/hooks";
-import { SeverityBadge, StatusBadge } from "@ui/element/Badges";
-import { hhmmss, timeAgo } from "../utils/hooks/time";
+import { SeverityBadge, StatusBadge } from "@ui/Badges";
+import { hhmmss, timeAgo } from "../utils/time";
 
 function TurbineCard({ t }: { t: TurbineDto }) {
     const id = t.turbineId ?? "";

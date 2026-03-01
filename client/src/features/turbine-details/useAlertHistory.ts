@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@api/api";
 import { showApiError } from "@api/customFetch";
-import type { AlertDto } from "@api/genereted/generated-ts-client";
+import type { AlertDto } from "@api/generated/generated-ts-client";
 
 export type AlertPreset = "24h" | "7d";
 

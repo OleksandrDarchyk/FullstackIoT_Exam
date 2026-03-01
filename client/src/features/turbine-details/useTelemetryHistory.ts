@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@api/api";
 import { showApiError } from "@api/customFetch";
-import { hhmmss } from "@utils/hooks/time";
-import type { TelemetryPointDto } from "@api/genereted/generated-ts-client";
+import { hhmmss } from "@utils/time";
+import type { TelemetryPointDto } from "@api/generated/generated-ts-client";
 
 export type MetricKey =
     | "windSpeed"

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import type { TurbineCommand } from "@core/domain/turbineCommands";
+import type { TurbineCommand } from "./types";
 
 interface Props {
     onSendCommand: (cmd: TurbineCommand) => Promise<void>;

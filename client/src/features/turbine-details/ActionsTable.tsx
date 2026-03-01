@@ -1,5 +1,5 @@
-import type { OperatorActionDto } from "@api/genereted/generated-ts-client";
-import { hhmmss } from "@utils/hooks/time";
+import type { OperatorActionDto } from "@api/generated/generated-ts-client";
+import { hhmmss } from "@utils/time";
 
 interface Props {
     actions: OperatorActionDto[];

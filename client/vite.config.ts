@@ -9,7 +9,6 @@ export default defineConfig({
     alias: {
       "@api": path.resolve(__dirname, "./src/api"),
       "@auth": path.resolve(__dirname, "./src/auth"),
-      "@config": path.resolve(__dirname, "./src/config"),
       "@core": path.resolve(__dirname, "./src/core"),
       "@features": path.resolve(__dirname, "./src/features"),
       "@pages": path.resolve(__dirname, "./src/pages"),

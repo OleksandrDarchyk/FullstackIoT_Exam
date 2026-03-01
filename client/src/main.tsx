@@ -4,7 +4,7 @@ import { RouterProvider } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { StreamProvider } from "@core/realtime/useStream";
 import router from "./router";
-import "./styles/index.css";
+import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>

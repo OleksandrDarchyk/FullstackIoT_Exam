@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { api } from "@api/api";
 import { useLiveQuery } from "./useLiveQuery";
-import type { AlertDto, TelemetryPointDto } from "@api/genereted/generated-ts-client";
+import type { AlertDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
 
 export function useTelemetryLive(turbineId: string) {
     const subscribe = useCallback(async (connectionId: string) => {
