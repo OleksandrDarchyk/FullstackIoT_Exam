@@ -34,9 +34,11 @@ export default function LoginPage() {
             <div className="card w-full max-w-sm bg-base-100 shadow-xl">
                 <div className="card-body gap-4">
                     <div>
-                        <h1 className="card-title text-2xl">Sign in</h1>
+                        <h1 className="card-title text-2xl">Sign in to manage turbines.</h1>
                         <p className="text-sm opacity-60 mt-1">
-                            Guest can view data; commands require login.
+                            You can view live data and history without signing in.
+                            <br />
+                            Signing in is required to send commands (start/stop, pitch, interval).
                         </p>
                     </div>
 

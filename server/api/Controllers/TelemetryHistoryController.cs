@@ -1,14 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using Api.DTO;
 using dataAccess;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("api/turbines/{turbineId}/telemetry")]
 public sealed class TelemetryHistoryController(WindmillDbContext db, AppOptions opts) : ControllerBase
 {

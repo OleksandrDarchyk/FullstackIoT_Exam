@@ -1,13 +1,11 @@
 using Api.DTO;
 using dataAccess;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers;
 
 [ApiController]
-[Authorize]
 [Route("api/turbines")]
 public sealed class TurbinesReadController(WindmillDbContext db, AppOptions opts) : ControllerBase
 {

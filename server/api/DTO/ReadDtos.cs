@@ -31,6 +31,8 @@ public sealed record OperatorActionDto(
     string TurbineId,
     DateTimeOffset RequestedAt,
     string Action,
+    string PayloadJson,
     string Status,
-    string? ValidationError
+    string? ValidationError,
+    string Username
 );
