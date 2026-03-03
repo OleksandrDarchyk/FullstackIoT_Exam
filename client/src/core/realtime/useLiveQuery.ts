@@ -25,9 +25,19 @@ export function useLiveQuery<T>(
 
                 setData((res.data ?? null) as T | null);
 
-                unsub = options?.eventType
-                    ? stream.on<T>(res.group, options.eventType, (dto) => setData(dto))
-                    : stream.onRaw<T>(res.group, (dto) => setData(dto));
+                const eventType = options?.eventType;
+                if (eventType) {
+                    unsub = stream.on<{ eventType: string; data?: T; Data?: T }>(
+                        res.group,
+                        eventType,
+                        (dto) => setData((dto.data ?? dto.Data) as T)
+                    );
+                } else {
+                    unsub = stream.onRaw<{ data?: T; Data?: T }>(
+                        res.group,
+                        (dto) => setData(((dto?.data ?? dto?.Data ?? dto) as unknown) as T)
+                    );
+                }
             } catch (e) {
                 console.error("useLiveQuery subscribe failed:", e);
             }
@@ -37,7 +47,7 @@ export function useLiveQuery<T>(
             cancelled = true;
             unsub?.();
         };
-    }, [stream, subscribe, options?.eventType]);
+    }, [stream.connectionId, subscribe, options?.eventType]);
 
     return { data, status: stream.status };
 }

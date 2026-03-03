@@ -19,6 +19,7 @@ export async function customFetch(url: RequestInfo, init?: RequestInit): Promise
 
     if (res.status === 401) {
         clearJwt();
+        toast.error("Session expired. Please sign in again.");
         window.location.href = "/login";
     }
 

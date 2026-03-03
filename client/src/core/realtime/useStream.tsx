@@ -1,161 +1,265 @@
-import React, {
+import {
     createContext,
     useContext,
     useEffect,
-    useMemo,
     useRef,
     useState,
+    type ReactNode,
 } from "react";
-import { CONNECT_EVENT, SSE_URL } from "@api/config";
 
 export type ConnectionStatus = "Connected" | "Reconnecting" | "Offline";
 
-type StreamApi = {
+interface BaseResponseDto {
+    eventType?: string;
+}
+
+export interface StreamConfig {
+    /** The SSE endpoint URL (e.g., "http://localhost:5000/Connect") */
+    urlForStreamEndpoint: string;
+    /** The SSE event name that delivers the connection response (e.g., "ConnectionResponse") */
+    connectEvent: string;
+}
+
+type Unsubscribe = () => void;
+
+export interface Stream {
+    /** The connection ID assigned by the server */
     connectionId: string | null;
+    /** Whether the connection is established */
+    isConnected: boolean;
     status: ConnectionStatus;
-    onRaw<T>(group: string, handler: (data: T) => void): () => void;
-    on<T>(group: string, eventType: string, handler: (dto: T) => void): () => void;
+    on<T>(
+        group: string,
+        eventType: string,
+        handler: (dto: T) => void
+    ): Unsubscribe;
+    /** Listen for any message on a group, regardless of eventType. */
+    onRaw<T>(group: string, handler: (dto: T) => void): Unsubscribe;
+}
+
+export class StreamError extends Error {
+    constructor(message: string) {
+        super(`[useStream] ${message}`);
+        this.name = "StreamError";
+    }
+}
+
+function assertNonEmpty(value: string, name: string): void {
+    if (!value || value.trim() === "") {
+        throw new StreamError(`${name} cannot be empty`);
+    }
+}
+
+type Listener = {
+    group: string;
+    eventType: string;
+    handler: (dto: unknown) => void;
 };
 
-const Ctx = createContext<StreamApi | null>(null);
+class StreamCore {
+    private eventSource: EventSource | null = null;
+    private listeners = new Map<symbol, Listener>();
+    private groupHandlers = new Map<string, (e: MessageEvent) => void>();
+    private pendingGroups = new Set<string>();
+    private isDisconnected = false;
 
-type Handler = (dto: any) => void;
+    connectionId: string | null = null;
+    onConnectionChange: ((id: string | null) => void) | null = null;
+    onStatusChange: ((status: ConnectionStatus) => void) | null = null;
 
-type GroupRegistryEntry = {
-    esListener: (e: MessageEvent) => void;
-    handlers: Set<Handler>;
-};
+    connect(config: StreamConfig) {
+        assertNonEmpty(config.urlForStreamEndpoint, "config.url");
+        assertNonEmpty(config.connectEvent, "config.connectEvent");
 
-export function StreamProvider({ children }: { children: React.ReactNode }) {
-    const esRef = useRef<EventSource | null>(null);
-    const groupsRef = useRef<Map<string, GroupRegistryEntry>>(new Map());
+        if (this.eventSource) {
+            throw new StreamError("Already connected. Call disconnect() first.");
+        }
+
+        this.isDisconnected = false;
+        this.eventSource = new EventSource(config.urlForStreamEndpoint);
+
+        // Attach handlers for any groups registered before connect
+        for (const group of this.pendingGroups) {
+            this.attachGroupHandler(group);
+        }
+        this.pendingGroups.clear();
+
+        this.eventSource.onopen = () => {
+            this.onStatusChange?.("Connected");
+        };
+
+        this.eventSource.addEventListener(config.connectEvent, (e) => {
+            const data = JSON.parse(e.data);
+            this.connectionId = data?.connectionId ?? null;
+            this.onConnectionChange?.(this.connectionId);
+        });
+
+        this.eventSource.onerror = () => {
+            console.error("[stream] EventSource connection error");
+            if (this.eventSource?.readyState === EventSource.CLOSED) {
+                this.onStatusChange?.("Offline");
+            } else {
+                this.onStatusChange?.("Reconnecting");
+            }
+        };
+    }
+
+    disconnect() {
+        this.isDisconnected = true;
+        this.eventSource?.close();
+        this.eventSource = null;
+        this.connectionId = null;
+        this.listeners.clear();
+        this.groupHandlers.clear();
+        this.pendingGroups.clear();
+    }
+
+    on<T>(
+        group: string,
+        eventType: string,
+        handler: (dto: T) => void
+    ): Unsubscribe {
+        assertNonEmpty(group, "group");
+        assertNonEmpty(eventType, "eventType");
+
+        if (typeof handler !== "function") {
+            throw new StreamError("handler must be a function");
+        }
+
+        if (this.isDisconnected) {
+            throw new StreamError(
+                "Cannot register listener after disconnect. This usually means you're calling on() outside of a useEffect, or the component unmounted."
+            );
+        }
+
+        const key = Symbol();
+
+        this.listeners.set(key, {
+            group,
+            eventType,
+            handler: handler as (dto: unknown) => void,
+        });
+        this.ensureGroupHandler(group);
+
+        return () => {
+            this.listeners.delete(key);
+            this.maybeRemoveGroupHandler(group);
+        };
+    }
+
+    onRaw<T>(group: string, handler: (dto: T) => void): Unsubscribe {
+        return this.on<T>(group, "*", handler);
+    }
+
+    private ensureGroupHandler(group: string) {
+        if (this.groupHandlers.has(group)) return;
+
+        if (!this.eventSource) {
+            // EventSource not ready yet, queue for later
+            this.pendingGroups.add(group);
+            return;
+        }
+
+        this.attachGroupHandler(group);
+    }
+
+    private attachGroupHandler(group: string) {
+        if (this.groupHandlers.has(group) || !this.eventSource) return;
+
+        const handler = (e: MessageEvent) => {
+            let data: BaseResponseDto;
+            try {
+                data = JSON.parse(e.data) as BaseResponseDto;
+            } catch {
+                console.error(`[stream] Failed to parse message on group "${group}":`, e.data);
+                return;
+            }
+
+            const eventType = data.eventType;
+            if (!eventType) {
+                console.warn(`[stream] Received message without eventType on group "${group}":`, data);
+                return;
+            }
+
+            for (const listener of this.listeners.values()) {
+                if (listener.group === group && (listener.eventType === eventType || listener.eventType === "*")) {
+                    try {
+                        listener.handler(data);
+                    } catch (err) {
+                        console.error(`[stream] Handler error for ${group}/${eventType}:`, err);
+                    }
+                }
+            }
+        };
+
+        this.eventSource.addEventListener(group, handler);
+        this.groupHandlers.set(group, handler);
+    }
+
+    private maybeRemoveGroupHandler(group: string) {
+        // Check if any listener still needs this group
+        for (const listener of this.listeners.values()) {
+            if (listener.group === group) return;
+        }
+
+        const handler = this.groupHandlers.get(group);
+        if (handler && this.eventSource) {
+            this.eventSource.removeEventListener(group, handler);
+        }
+        this.groupHandlers.delete(group);
+    }
+}
+
+const StreamContext = createContext<Stream | null>(null);
+
+export interface StreamProviderProps {
+    config: StreamConfig;
+    children: ReactNode;
+}
+
+export function StreamProvider({ config, children }: StreamProviderProps) {
+    const coreRef = useRef<StreamCore | null>(null);
     const [connectionId, setConnectionId] = useState<string | null>(null);
     const [status, setStatus] = useState<ConnectionStatus>("Reconnecting");
 
+    if (!coreRef.current) {
+        coreRef.current = new StreamCore();
+    }
+
     useEffect(() => {
-        const es = new EventSource(SSE_URL);
-        esRef.current = es;
-
-        const onOpen = () => setStatus("Connected");
-
-        const onError = () => {
-            if (es.readyState === EventSource.CLOSED) setStatus("Offline");
-            else setStatus("Reconnecting");
-        };
-
-        const tryReadConnectionId = (e: MessageEvent) => {
-            try {
-                const dto = JSON.parse(e.data);
-                const id = dto?.connectionId ?? dto?.ConnectionId;
-                if (typeof id === "string" && id.length > 0) setConnectionId(id);
-            } catch {
-                if (
-                    typeof e.data === "string" &&
-                    e.data.length > 10 &&
-                    e.data.includes("-")
-                ) {
-                    setConnectionId(e.data);
-                }
-            }
-        };
-
-        es.addEventListener("open", onOpen as EventListener);
-        es.addEventListener("error", onError as EventListener);
-        es.addEventListener(CONNECT_EVENT, tryReadConnectionId as EventListener);
-        es.addEventListener("connected", tryReadConnectionId as EventListener);
-        es.addEventListener("ConnectionResponse", tryReadConnectionId as EventListener);
-        es.addEventListener("message", tryReadConnectionId as EventListener);
+        const core = coreRef.current!;
+        core.onConnectionChange = setConnectionId;
+        core.onStatusChange = setStatus;
+        core.connect(config);
 
         return () => {
-            es.removeEventListener("open", onOpen as EventListener);
-            es.removeEventListener("error", onError as EventListener);
-            es.removeEventListener(CONNECT_EVENT, tryReadConnectionId as EventListener);
-            es.removeEventListener("connected", tryReadConnectionId as EventListener);
-            es.removeEventListener("ConnectionResponse", tryReadConnectionId as EventListener);
-            es.removeEventListener("message", tryReadConnectionId as EventListener);
-
-            for (const [group, entry] of groupsRef.current.entries()) {
-                es.removeEventListener(group, entry.esListener as EventListener);
-            }
-            groupsRef.current.clear();
-
-            es.close();
-            esRef.current = null;
+            core.disconnect();
         };
-    }, []);
+    }, [config.urlForStreamEndpoint, config.connectEvent]);
 
-    const api = useMemo<StreamApi>(() => {
-        const ensureGroupListener = (group: string) => {
-            const es = esRef.current;
-            if (!es) return null;
+    const stream: Stream = {
+        connectionId,
+        isConnected: connectionId !== null,
+        status,
+        on: (group, eventType, handler) => coreRef.current!.on(group, eventType, handler),
+        onRaw: (group, handler) => coreRef.current!.onRaw(group, handler),
+    };
 
-            const existing = groupsRef.current.get(group);
-            if (existing) return existing;
-
-            const handlers = new Set<Handler>();
-
-            const esListener = (e: MessageEvent) => {
-                let dto: any;
-                try {
-                    dto = JSON.parse(e.data);
-                } catch {
-                    return;
-                }
-
-                handlers.forEach((h) => {
-                    try {
-                        h(dto);
-                    } catch {
-                        //
-                    }
-                });
-            };
-
-            const entry: GroupRegistryEntry = { esListener, handlers };
-            groupsRef.current.set(group, entry);
-            es.addEventListener(group, esListener as EventListener);
-            return entry;
-        };
-
-        const onRaw = <T,>(group: string, handler: (data: T) => void) => {
-            const entry = ensureGroupListener(group);
-            if (!entry) return () => {};
-
-            const h: Handler = (dto) => handler(dto as T);
-            entry.handlers.add(h);
-
-            return () => {
-                entry.handlers.delete(h);
-
-                if (entry.handlers.size === 0) {
-                    const es = esRef.current;
-                    if (es) es.removeEventListener(group, entry.esListener as EventListener);
-                    groupsRef.current.delete(group);
-                }
-            };
-        };
-
-        const on = <T,>(group: string, eventType: string, handler: (dto: T) => void) => {
-            return onRaw<any>(group, (dto) => {
-                const et = dto?.eventType ?? dto?.EventType;
-                if (et === eventType) handler(dto as T);
-            });
-        };
-
-        return {
-            connectionId,
-            status,
-            onRaw,
-            on,
-        };
-    }, [connectionId, status]);
-
-    return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
+    return (
+        <StreamContext.Provider value={stream}>
+            {children}
+        </StreamContext.Provider>
+    );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
-export function useStream() {
-    const ctx = useContext(Ctx);
-    if (!ctx) throw new Error("useStream must be used inside StreamProvider");
-    return ctx;
+/** @throws {StreamError} If used outside of StreamProvider */
+export function useStream(): Stream {
+    const stream = useContext(StreamContext);
+    if (!stream) {
+        throw new StreamError(
+            "useStream must be used within a StreamProvider. " +
+            "Wrap your app with <StreamProvider config={...}>."
+        );
+    }
+    return stream;
 }

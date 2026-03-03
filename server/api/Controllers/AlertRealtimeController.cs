@@ -42,11 +42,13 @@ public sealed class AlertRealtimeController(
                 if (hasTurbine)
                     q = q.Where(x => x.TurbineId == turbineId);
 
-                return await q
+                var data = await q
                     .OrderByDescending(x => x.Ts)
                     .Take(50)
                     .Select(x => new AlertDto(x.Id, x.TurbineId, x.Ts, x.Severity, x.Message))
                     .ToListAsync();
+
+                return new SseEvent<List<AlertDto>>("AlertsUpdate", data);
             }
         );
 

@@ -43,7 +43,7 @@ const RANGE_LIMIT: Record<Range, number> = {
     "24h": 2000,
 };
 
-export function useTelemetryHistory(turbineId: string) {
+export function useTelemetryHistory(turbineId: string, livePoints?: TelemetryPointDto[] | null) {
     const [range, setRange] = useState<Range>("10m");
     const [metric, setMetric] = useState<MetricKey>("windSpeed");
     const [points, setPoints] = useState<TelemetryPointDto[]>([]);
@@ -62,13 +62,24 @@ export function useTelemetryHistory(turbineId: string) {
 
     const meta = metricOptions.find((x) => x.key === metric) ?? metricOptions[0];
 
-    const chartData = useMemo(() =>
-        points.map((x) => ({
-            time: hhmmss(x.ts),
-            value: (x as Record<string, number | undefined>)[metric] ?? 0,
-        })),
-        [points, metric]
-    );
+    const chartData = useMemo(() => {
+        const cutoff = Date.now() - RANGE_MS[range];
+        const extra = range !== "24h" ? (livePoints ?? []) : [];
+        const seen = new Set<string>();
+        return [...extra, ...points]
+            .filter((x) => x.ts != null && new Date(x.ts).getTime() >= cutoff)
+            .sort((a, b) => (a.ts! < b.ts! ? -1 : a.ts! > b.ts! ? 1 : 0))
+            .filter((x) => {
+                const key = String(x.ts);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            })
+            .map((x) => ({
+                time: hhmmss(x.ts),
+                value: (x as Record<string, number | undefined>)[metric] ?? 0,
+            }));
+    }, [points, livePoints, metric, range]);
 
     return { range, setRange, metric, setMetric, chartData, meta, loading };
 }
