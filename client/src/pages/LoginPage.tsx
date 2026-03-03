@@ -30,7 +30,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-base-200 flex items-center justify-center px-4">
+        <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundImage: "url('/login-b.png')", backgroundSize: "cover", backgroundPosition: "center" }}>
             <div className="card w-full max-w-sm bg-base-100 shadow-xl">
                 <div className="card-body gap-4">
                     <div>
