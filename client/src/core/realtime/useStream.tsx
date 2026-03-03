@@ -255,8 +255,8 @@ export function StreamProvider({ config, children }: StreamProviderProps) {
     );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 /** @throws {StreamError} If used outside of StreamProvider */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useStream(): Stream {
     const stream = useContext(StreamContext);
     if (!stream) {
