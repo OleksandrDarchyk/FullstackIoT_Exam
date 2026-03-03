@@ -47,6 +47,9 @@ export function useLiveQuery<T>(
             cancelled = true;
             unsub?.();
         };
+        // stream is a new object every render but stream.on/onRaw delegate to a stable coreRef —
+        // adding stream itself would cause infinite re-runs
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stream.connectionId, subscribe, options?.eventType]);
 
     return { data, status: stream.status };

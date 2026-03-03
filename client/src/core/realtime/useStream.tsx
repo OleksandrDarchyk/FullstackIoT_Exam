@@ -235,6 +235,9 @@ export function StreamProvider({ config, children }: StreamProviderProps) {
         return () => {
             core.disconnect();
         };
+        // using primitive fields instead of the config object to avoid reconnecting
+        // when the parent re-renders with a structurally identical but new config reference
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config.urlForStreamEndpoint, config.connectEvent]);
 
     const stream: Stream = {
@@ -252,6 +255,7 @@ export function StreamProvider({ config, children }: StreamProviderProps) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 /** @throws {StreamError} If used outside of StreamProvider */
 export function useStream(): Stream {
     const stream = useContext(StreamContext);
