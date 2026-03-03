@@ -3,14 +3,13 @@ import { Link, useParams } from "react-router-dom";
 
 import { api } from "@api/api";
 import { showApiError } from "@api/customFetch";
-import { useAlertsLiveWithToast, useTelemetryLive } from "@core/realtime/hooks";
+import { useActionsLive, useAlertsLiveWithToast, useTelemetryLive } from "@core/realtime/hooks";
 import { SeverityBadge, StatusBadge } from "@ui/Badges";
 import { hhmmss, timeAgo } from "../utils/time";
 
 import type { TurbineDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
 import type { TurbineCommand } from "@features/turbine-details/types";
 
-import { useActionsHistory } from "@features/turbine-details/useActionsHistory";
 import { useAlertHistory } from "@features/turbine-details/useAlertHistory";
 import { useTelemetryHistory } from "@features/turbine-details/useTelemetryHistory";
 import { useTurbineCommands } from "@features/turbine-details/useTurbineCommands";
@@ -44,16 +43,15 @@ export default function TurbineDetailsPage() {
     }, [id]);
 
     // ── feature hooks ──────────────────────────────────────────────────────
-    const { actions, refetch: refetchActions } = useActionsHistory(id);
-    const telemetry = useTelemetryHistory(id);
+    const { data: actions } = useActionsLive(id);
+    const telemetry = useTelemetryHistory(id, telemetryList);
     const alertHist = useAlertHistory(id);
     const { sendCommand, loggedIn, sending } = useTurbineCommands(id);
 
     // ── compositor: send + refresh actions ────────────────────────────────
     const onSendCommand = useCallback(async (cmd: TurbineCommand) => {
         await sendCommand(cmd);
-        await refetchActions();
-    }, [sendCommand, refetchActions]);
+    }, [sendCommand]);
 
     // ── guard ──────────────────────────────────────────────────────────────
     if (!id) {
@@ -163,7 +161,7 @@ export default function TurbineDetailsPage() {
                     </div>
                 </div>
 
-                <ActionsTable actions={actions} />
+                <ActionsTable actions={actions ?? []} />
 
                 <AlertHistoryPanel
                     alertHistory={alertHist.alertHistory}

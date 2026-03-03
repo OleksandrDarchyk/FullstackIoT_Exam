@@ -1,5 +1,7 @@
 namespace Api.DTO;
 
+public sealed record SseEvent<T>(string EventType, T Data);
+
 public sealed record TurbineAlertDto(
     string TurbineId,
     string FarmId,

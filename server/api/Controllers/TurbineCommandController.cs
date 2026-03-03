@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text.Json;
+using Api.DTO;
 using dataAccess;
 using dataAccess.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -19,9 +20,12 @@ public sealed class TurbineCommandController(
     ILogger<TurbineCommandController> logger
 ) : ControllerBase
 {
+    private static readonly JsonSerializerOptions _camelCase =
+        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     [Authorize]
     [HttpPost("{turbineId}/command")]
-    public async Task SendCommand(string turbineId, [FromBody] JsonElement command, CancellationToken ct)
+    public async Task SendCommand(string turbineId, [FromBody] CommandRequestDto command, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(turbineId))
             throw new ValidationException("turbineId is required");
@@ -34,7 +38,6 @@ public sealed class TurbineCommandController(
         if (!Guid.TryParse(userIdRaw, out var userGuid))
             throw new ValidationException("UserId in token is not a GUID");
 
-        // Seed should run on startup, so turbines should already exist.
         var turbineExists = await db.Turbines.AnyAsync(
             t => t.FarmId == opts.FarmId && t.TurbineId == turbineId, ct);
 
@@ -42,7 +45,7 @@ public sealed class TurbineCommandController(
             throw new ValidationException(
                 $"Unknown turbineId '{turbineId}' for farm '{opts.FarmId}'. Did you run seed on startup?");
 
-        var action = command.GetProperty("action").GetString() ?? "";
+        var payloadJson = JsonSerializer.Serialize(command, _camelCase);
 
         var row = new OperatorAction
         {
@@ -50,8 +53,8 @@ public sealed class TurbineCommandController(
             FarmId = opts.FarmId,
             TurbineId = turbineId,
             UserId = userGuid,
-            Action = action,
-            PayloadJson = command.GetRawText(),
+            Action = command.Action,
+            PayloadJson = payloadJson,
             RequestedAt = DateTimeOffset.UtcNow,
             Status = "Requested"
         };
@@ -63,12 +66,12 @@ public sealed class TurbineCommandController(
 
         try
         {
-            await mqtt.PublishAsync(topic, command.GetRawText());
+            await mqtt.PublishAsync(topic, payloadJson);
 
             row.Status = "Sent";
             await db.SaveChangesAsync(ct);
 
-            logger.LogInformation("Command sent: turbine={TurbineId} action={Action}", turbineId, action);
+            logger.LogInformation("Command sent: turbine={TurbineId} action={Action}", turbineId, command.Action);
         }
         catch (Exception ex)
         {
@@ -76,51 +79,35 @@ public sealed class TurbineCommandController(
             row.ValidationError = ex.Message;
             await db.SaveChangesAsync(ct);
 
-            logger.LogError(ex, "Failed to publish command: turbine={TurbineId} action={Action}", turbineId, action);
+            logger.LogError(ex, "Failed to publish command: turbine={TurbineId} action={Action}", turbineId, command.Action);
             throw;
         }
     }
 
-    private static void ValidateCommand(JsonElement command)
+    private static void ValidateCommand(CommandRequestDto command)
     {
-        if (command.ValueKind != JsonValueKind.Object)
-            throw new ValidationException("Command must be a JSON object");
-
-        if (!command.TryGetProperty("action", out var actionProp) || actionProp.ValueKind != JsonValueKind.String)
-            throw new ValidationException("Command must contain string property 'action'");
-
-        var action = actionProp.GetString();
-
-        switch (action)
+        switch (command.Action)
         {
             case "setInterval":
             {
-                if (!command.TryGetProperty("value", out var valueProp) || valueProp.ValueKind != JsonValueKind.Number)
-                    throw new ValidationException("setInterval requires numeric 'value'");
-
-                var value = valueProp.GetInt32();
-                if (value is < 1 or > 60)
+                if (command.Value is null)
+                    throw new ValidationException("setInterval requires 'value'");
+                if (command.Value < 1 || command.Value > 60)
                     throw new ValidationException("setInterval value must be 1..60 seconds");
                 break;
             }
 
             case "setPitch":
             {
-                if (!command.TryGetProperty("angle", out var angleProp) || angleProp.ValueKind != JsonValueKind.Number)
-                    throw new ValidationException("setPitch requires numeric 'angle'");
-
-                var angle = angleProp.GetDouble();
-                if (angle < 0 || angle > 30)
+                if (command.Angle is null)
+                    throw new ValidationException("setPitch requires 'angle'");
+                if (command.Angle < 0 || command.Angle > 30)
                     throw new ValidationException("setPitch angle must be 0..30 degrees");
                 break;
             }
 
             case "stop":
-            {
-                if (command.TryGetProperty("reason", out var reasonProp) && reasonProp.ValueKind != JsonValueKind.String)
-                    throw new ValidationException("stop 'reason' must be a string if provided");
                 break;
-            }
 
             case "start":
                 break;

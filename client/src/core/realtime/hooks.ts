@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { api } from "@api/api";
 import { useLiveQuery } from "./useLiveQuery";
-import type { AlertDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
+import type { AlertDto, OperatorActionDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
 
 export function useTelemetryLive(turbineId: string) {
     const subscribe = useCallback(async (connectionId: string) => {
@@ -10,7 +10,7 @@ export function useTelemetryLive(turbineId: string) {
         return await api.telemetryRealtime.getTelemetry(connectionId, turbineId);
     }, [turbineId]);
 
-    return useLiveQuery<TelemetryPointDto[]>(subscribe);
+    return useLiveQuery<TelemetryPointDto[]>(subscribe, { eventType: "TelemetryUpdate" });
 }
 
 export function useAlertsLive(turbineId: string) {
@@ -19,7 +19,7 @@ export function useAlertsLive(turbineId: string) {
         return await api.alertsRealtime.getAlerts(connectionId, turbineId);
     }, [turbineId]);
 
-    return useLiveQuery<AlertDto[]>(subscribe);
+    return useLiveQuery<AlertDto[]>(subscribe, { eventType: "AlertsUpdate" });
 }
 
 export function useAlertsLiveWithToast(turbineId: string) {
@@ -55,10 +55,19 @@ export function useAlertsLiveWithToast(turbineId: string) {
     return base;
 }
 
+export function useActionsLive(turbineId: string) {
+    const subscribe = useCallback(async (connectionId: string) => {
+        if (!turbineId) return { group: undefined, data: undefined as OperatorActionDto[] | undefined };
+        return await api.actionsRealtime.getActions(connectionId, turbineId);
+    }, [turbineId]);
+
+    return useLiveQuery<OperatorActionDto[]>(subscribe, { eventType: "ActionsUpdate" });
+}
+
 export function useAlertsLiveAll() {
     const subscribe = useCallback(async (connectionId: string) => {
         return await api.alertsRealtime.getAlerts(connectionId, undefined);
     }, []);
 
-    return useLiveQuery<AlertDto[]>(subscribe);
+    return useLiveQuery<AlertDto[]>(subscribe, { eventType: "AlertsUpdate" });
 }

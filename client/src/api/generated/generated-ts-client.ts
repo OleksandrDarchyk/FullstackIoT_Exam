@@ -58,6 +58,58 @@ export class ActionsHistoryClient {
     }
 }
 
+export class ActionsRealtimeClient {
+    private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
+    private baseUrl: string;
+    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
+
+    constructor(baseUrl?: string, http?: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> }) {
+        this.http = http ? http : window as any;
+        this.baseUrl = baseUrl ?? "";
+    }
+
+    getActions(connectionId: string | undefined, turbineId: string | undefined): Promise<RealtimeListenResponseOfListOfOperatorActionDto> {
+        let url_ = this.baseUrl + "/GetActions?";
+        if (connectionId === null)
+            throw new globalThis.Error("The parameter 'connectionId' cannot be null.");
+        else if (connectionId !== undefined)
+            url_ += "connectionId=" + encodeURIComponent("" + connectionId) + "&";
+        if (turbineId === null)
+            throw new globalThis.Error("The parameter 'turbineId' cannot be null.");
+        else if (turbineId !== undefined)
+            url_ += "turbineId=" + encodeURIComponent("" + turbineId) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processGetActions(_response);
+        });
+    }
+
+    protected processGetActions(response: Response): Promise<RealtimeListenResponseOfListOfOperatorActionDto> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as RealtimeListenResponseOfListOfOperatorActionDto;
+            return result200;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<RealtimeListenResponseOfListOfOperatorActionDto>(null as any);
+    }
+}
+
 export class AlertRealtimeClient {
     private http: { fetch(url: RequestInfo, init?: RequestInit): Promise<Response> };
     private baseUrl: string;
@@ -406,7 +458,7 @@ export class TurbineCommandClient {
         this.baseUrl = baseUrl ?? "";
     }
 
-    sendCommand(turbineId: string, command: any): Promise<void> {
+    sendCommand(turbineId: string, command: CommandRequestDto): Promise<void> {
         let url_ = this.baseUrl + "/api/turbines/{turbineId}/command";
         if (turbineId === undefined || turbineId === null)
             throw new globalThis.Error("The parameter 'turbineId' must be defined.");
@@ -505,6 +557,11 @@ export interface RealtimeListenResponse {
 }
 
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
+export interface RealtimeListenResponseOfListOfOperatorActionDto extends RealtimeListenResponse {
+    data?: OperatorActionDto[] | undefined;
+}
+
+/** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
 export interface RealtimeListenResponseOfListOfAlertDto extends RealtimeListenResponse {
     data?: AlertDto[] | undefined;
 }
@@ -553,6 +610,13 @@ export interface TelemetryPointDto {
 /** Returned by subscribe endpoints with initial data. The client receives the current state immediately and knows which SSE group to listen on for subsequent updates. */
 export interface RealtimeListenResponseOfListOfTelemetryPointDto extends RealtimeListenResponse {
     data?: TelemetryPointDto[] | undefined;
+}
+
+export interface CommandRequestDto {
+    action: string;
+    value?: number | undefined;
+    angle?: number | undefined;
+    reason?: string | undefined;
 }
 
 export interface TurbineDto {

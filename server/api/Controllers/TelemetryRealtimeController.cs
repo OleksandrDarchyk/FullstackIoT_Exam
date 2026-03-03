@@ -44,17 +44,19 @@ public sealed class TelemetryRealtimeController(
             connectionId,
             group,
             criteria: snapshot => snapshot.HasAdded<TelemetryRecord>(),
-            query: async ctx => await ctx.Telemetry
-                .Where(x => x.FarmId == opts.FarmId && x.TurbineId == turbineId)
-                .OrderByDescending(x => x.Ts)
-                .Take(50)
-                .Select(x => new TelemetryPointDto(
-                    x.TurbineId, x.Ts,
-                    x.WindSpeed, x.WindDirection, x.AmbientTemperature,
-                    x.PowerOutput, x.RotorSpeed, x.NacelleDirection,
-                    x.GeneratorTemp, x.GearboxTemp, x.Vibration,
-                    x.BladePitch, x.Status))
-                .ToListAsync()
+            query: async ctx => new SseEvent<List<TelemetryPointDto>>(
+                "TelemetryUpdate",
+                await ctx.Telemetry
+                    .Where(x => x.FarmId == opts.FarmId && x.TurbineId == turbineId)
+                    .OrderByDescending(x => x.Ts)
+                    .Take(50)
+                    .Select(x => new TelemetryPointDto(
+                        x.TurbineId, x.Ts,
+                        x.WindSpeed, x.WindDirection, x.AmbientTemperature,
+                        x.PowerOutput, x.RotorSpeed, x.NacelleDirection,
+                        x.GeneratorTemp, x.GearboxTemp, x.Vibration,
+                        x.BladePitch, x.Status))
+                    .ToListAsync())
         );
 
         var initial = await db.Telemetry

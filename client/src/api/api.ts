@@ -6,6 +6,7 @@ import {
     TurbinesReadClient,
     TelemetryRealtimeClient,
     AlertRealtimeClient,
+    ActionsRealtimeClient,
     TelemetryHistoryClient,
     AlertsHistoryClient,
     ActionsHistoryClient,
@@ -19,6 +20,7 @@ export const api = {
 
     telemetryRealtime: new TelemetryRealtimeClient(BASE_URL, customHttp),
     alertsRealtime: new AlertRealtimeClient(BASE_URL, customHttp),
+    actionsRealtime: new ActionsRealtimeClient(BASE_URL, customHttp),
 
     telemetryHistory: new TelemetryHistoryClient(BASE_URL, customHttp),
     alertsHistory: new AlertsHistoryClient(BASE_URL, customHttp),

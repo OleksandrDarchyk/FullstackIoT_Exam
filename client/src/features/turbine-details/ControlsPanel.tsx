@@ -74,7 +74,7 @@ export function ControlsPanel({ onSendCommand, loggedIn, sending }: Props) {
                     />
                     <button
                         className="btn btn-outline"
-                        disabled={disabled}
+                        disabled={disabled || interval < 1 || interval > 60}
                         onClick={() => onSendCommand({ action: "setInterval", value: interval })}
                     >
                         Apply
