@@ -17,7 +17,7 @@ using StateleSSE.AspNetCore.GroupRealtime;
 
 namespace Api;
 
-public class Program
+public partial class Program
 {
     public static void ConfigureServices(IServiceCollection services)
     {
@@ -119,9 +119,9 @@ public class Program
         services.AddExceptionHandler<GlobalExceptionHandler>();
     }
 
-    public static async Task Main()
+    public static async Task Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder();
+        var builder = WebApplication.CreateBuilder(args);
         ConfigureServices(builder.Services);
 
         var app = builder.Build();
@@ -167,3 +167,6 @@ public class Program
         app.Run();
     }
 }
+
+// Needed so WebApplicationFactory<Program> can discover the entry point assembly
+public partial class Program { }

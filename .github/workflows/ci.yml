@@ -1,0 +1,67 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  # ==========================================
+  # FRONTEND - React + Vite
+  # ==========================================
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: client
+        run: npm run lint
+
+      - name: Build frontend
+        working-directory: client
+        run: npm run build
+
+  # ==========================================
+  # BACKEND - .NET 10
+  # ==========================================
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore server/api/api.csproj
+
+      - name: Build
+        run: dotnet build server/api/api.csproj --no-restore --configuration Release
+
+#      - name: Run tests
+#        run: dotnet test server/tests/tests.csproj --no-build --configuration Release --verbosity normal

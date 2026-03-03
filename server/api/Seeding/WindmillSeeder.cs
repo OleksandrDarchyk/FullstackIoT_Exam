@@ -19,7 +19,10 @@ public sealed class WindmillSeeder(
             logger.LogInformation("EF create script (debug):\n{Script}", db.Database.GenerateCreateScript());
         }
 
-        await db.Database.MigrateAsync(ct);
+        if (db.Database.IsRelational())
+            await db.Database.MigrateAsync(ct);
+        else
+            await db.Database.EnsureCreatedAsync(ct);
 
         var farm = await db.Farms.FirstOrDefaultAsync(f => f.Id == opts.FarmId, ct);
         if (farm is null)
