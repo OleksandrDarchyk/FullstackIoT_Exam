@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 using System.Text.Json;
 using Api.DTO;
+using Api.Security;
 using dataAccess;
 using dataAccess.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -32,11 +32,7 @@ public sealed class TurbineCommandController(
 
         ValidateCommand(command);
 
-        var userIdRaw = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                        ?? throw new UnauthorizedAccessException("Missing NameIdentifier claim");
-
-        if (!Guid.TryParse(userIdRaw, out var userGuid))
-            throw new ValidationException("UserId in token is not a GUID");
+        var userGuid = User.GetUserId();
 
         var turbineExists = await db.Turbines.AnyAsync(
             t => t.FarmId == opts.FarmId && t.TurbineId == turbineId, ct);
@@ -86,9 +82,12 @@ public sealed class TurbineCommandController(
 
     private static void ValidateCommand(CommandRequestDto command)
     {
-        switch (command.Action)
+        if (string.IsNullOrWhiteSpace(command.Action))
+            throw new ValidationException("'action' is required");
+
+        switch (command.Action.Trim().ToLowerInvariant())
         {
-            case "setInterval":
+            case "setinterval":
             {
                 if (command.Value is null)
                     throw new ValidationException("setInterval requires 'value'");
@@ -97,7 +96,7 @@ public sealed class TurbineCommandController(
                 break;
             }
 
-            case "setPitch":
+            case "setpitch":
             {
                 if (command.Angle is null)
                     throw new ValidationException("setPitch requires 'angle'");
@@ -107,8 +106,6 @@ public sealed class TurbineCommandController(
             }
 
             case "stop":
-                break;
-
             case "start":
                 break;
 

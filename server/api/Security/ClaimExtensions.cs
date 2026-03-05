@@ -4,7 +4,6 @@ namespace Api.Security;
 
 public static class ClaimExtensions
 {
-    // Повертає Guid напряму (зручно для EF / DB)
     public static Guid GetUserId(this ClaimsPrincipal claims)
     {
         var raw =

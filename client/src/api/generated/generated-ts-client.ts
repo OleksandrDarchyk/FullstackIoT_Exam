@@ -613,7 +613,7 @@ export interface RealtimeListenResponseOfListOfTelemetryPointDto extends Realtim
 }
 
 export interface CommandRequestDto {
-    action: string;
+    action?: string;
     value?: number | undefined;
     angle?: number | undefined;
     reason?: string | undefined;
