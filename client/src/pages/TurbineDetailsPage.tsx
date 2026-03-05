@@ -32,6 +32,12 @@ export default function TurbineDetailsPage() {
         undefined
     );
 
+    const statusRaw = (latest?.status ?? "").toLowerCase();
+    const lastTs = latest?.ts ? new Date(latest.ts).getTime() : 0;
+    const isFresh = lastTs > 0 && Date.now() - lastTs < 15_000;
+    const effectiveStatus: "running" | "stopped" | "offline" =
+        !isFresh ? "offline" : (statusRaw === "stopped" ? "stopped" : "running");
+
     // ── turbine metadata ───────────────────────────────────────────────────
     const [turbine, setTurbine] = useState<TurbineDto | null>(null);
 
@@ -129,6 +135,7 @@ export default function TurbineDetailsPage() {
                             onSendCommand={onSendCommand}
                             loggedIn={loggedIn}
                             sending={sending}
+                            status={effectiveStatus}
                         />
 
                         {/* Live alerts */}
