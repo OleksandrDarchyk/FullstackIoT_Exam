@@ -3,4 +3,3 @@ const prod = "https://server-windfarm-hill-1973.fly.dev";
 
 export const BASE_URL = import.meta.env.PROD ? prod : local;
 export const SSE_URL = `${BASE_URL}/sse`;
-export const CONNECT_EVENT = "connected";

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Api.DTO;
 using Api.Security;
 using dataAccess;
@@ -20,8 +21,11 @@ public sealed class TurbineCommandController(
     ILogger<TurbineCommandController> logger
 ) : ControllerBase
 {
-    private static readonly JsonSerializerOptions _camelCase =
-        new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    private static readonly JsonSerializerOptions _camelCase = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
 
     [Authorize]
     [HttpPost("{turbineId}/command")]
