@@ -41,7 +41,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureTestServices(services =>
         {
-            // ── DB: swap Npgsql for InMemory ─────────────────────────────────────────
             // Remove BOTH DbContextOptions AND IDbContextOptionsConfiguration —
             // EF Core 7+ registers the configure-action as IDbContextOptionsConfiguration<T>,
             // and if both Npgsql and InMemory configs remain it throws "two providers" error.
@@ -51,8 +50,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 services.Remove(d);
             services.AddDbContext<WindmillDbContext>(opts => opts.UseInMemoryDatabase(_dbName));
 
-            // ── SSE backplane: remove Redis (and its IConnectionMultiplexer dependency),
-            //    replace with InMemory so no Redis connection is attempted at startup ──
+            // SSE backplane: remove Redis (and its IConnectionMultiplexer dependency),
+            // replace with InMemory so no Redis connection is attempted at startup
             var backplaneDescriptors = services
                 .Where(d =>
                     d.ServiceType.FullName?.Contains("ISseBackplane") == true ||
@@ -62,7 +61,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             foreach (var d in backplaneDescriptors) services.Remove(d);
             services.AddInMemorySseBackplane();
 
-            // ── MQTT: replace with no-op so ConnectAsync in Main() doesn't fail ──────
+            // MQTT: replace with no-op so ConnectAsync in Main() doesn't fail
             var mqttDescriptors = services
                 .Where(d => d.ServiceType == typeof(IMqttClientService))
                 .ToList();

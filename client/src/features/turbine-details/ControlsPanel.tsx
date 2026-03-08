@@ -19,7 +19,7 @@ export function ControlsPanel({ onSendCommand, loggedIn, sending, status }: Prop
     const running = s === "running";
     const stopped = s === "stopped";
 
-    const canStart    = loggedIn && !sending && !offline && !running;
+    const canStart    = loggedIn && !sending && !running;
     const canStop     = loggedIn && !sending && !offline && !stopped;
     const canInterval = loggedIn && !sending && !offline;
     const canPitch    = loggedIn && !sending && !offline && running;
