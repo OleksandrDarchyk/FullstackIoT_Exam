@@ -76,8 +76,8 @@ public class PasswordHashServiceTests
     [Fact]
     public void Verify_InvalidBase64Salt_ThrowsFormatException()
     {
-        // Convert.FromBase64String кидає FormatException на некоректний Base64.
-        // Це очікувана поведінка — глобальний exception handler поверне ProblemDetails.
+        // Convert.FromBase64String throws FormatException for invalid Base64.
+        // Expected behavior — global exception handler will return ProblemDetails.
         var service = new PasswordHashService();
         var (hash, _) = service.Hash("password");
 

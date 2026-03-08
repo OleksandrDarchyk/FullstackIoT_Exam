@@ -23,7 +23,6 @@ export default function TurbineDetailsPage() {
     const { turbineId } = useParams();
     const id = turbineId ?? "";
 
-    // ── live data ──────────────────────────────────────────────────────────
     const { data: telemetryList } = useTelemetryLive(id);
     const { data: liveAlerts } = useAlertsLiveWithToast(id);
 
@@ -38,7 +37,6 @@ export default function TurbineDetailsPage() {
     const effectiveStatus: "running" | "stopped" | "offline" =
         !isFresh ? "offline" : (statusRaw === "stopped" ? "stopped" : "running");
 
-    // ── turbine metadata ───────────────────────────────────────────────────
     const [turbine, setTurbine] = useState<TurbineDto | null>(null);
 
     useEffect(() => {
@@ -48,18 +46,15 @@ export default function TurbineDetailsPage() {
             .catch(showApiError);
     }, [id]);
 
-    // ── feature hooks ──────────────────────────────────────────────────────
     const { data: actions } = useActionsLive(id);
     const telemetry = useTelemetryHistory(id, telemetryList);
     const alertHist = useAlertHistory(id);
     const { sendCommand, loggedIn, sending } = useTurbineCommands(id);
 
-    // ── compositor: send + refresh actions ────────────────────────────────
     const onSendCommand = useCallback(async (cmd: TurbineCommand) => {
         await sendCommand(cmd);
     }, [sendCommand]);
 
-    // ── guard ──────────────────────────────────────────────────────────────
     if (!id) {
         return (
             <div className="min-h-screen bg-base-200">

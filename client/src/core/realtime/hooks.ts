@@ -1,29 +1,66 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { StateleSSEClient } from "statele-sse";
 import toast from "react-hot-toast";
 import { api } from "@api/api";
-import { useLiveQuery } from "./useLiveQuery";
+import { SSE_URL } from "@api/config";
 import type { AlertDto, OperatorActionDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
 
+const sseClient = new StateleSSEClient(SSE_URL);
+
+function unwrapList<T>(payload: unknown): T[] {
+    if (Array.isArray(payload)) return payload as T[];
+    if (payload && typeof payload === "object") {
+        if ("data" in payload && Array.isArray((payload as { data?: unknown }).data))
+            return (payload as { data: T[] }).data;
+        if ("Data" in payload && Array.isArray((payload as { Data?: unknown }).Data))
+            return (payload as { Data: T[] }).Data;
+    }
+    return [];
+}
+
 export function useTelemetryLive(turbineId: string) {
-    const subscribe = useCallback(async (connectionId: string) => {
-        if (!turbineId) return { group: undefined, data: undefined as TelemetryPointDto[] | undefined };
-        return await api.telemetryRealtime.getTelemetry(connectionId, turbineId);
+    const [data, setData] = useState<TelemetryPointDto[] | null>(null);
+
+    useEffect(() => {
+        if (!turbineId) { setData(null); return; }
+        return sseClient.listen(
+            async (id) => await api.telemetryRealtime.getTelemetry(id, turbineId),
+            (payload) => setData(unwrapList<TelemetryPointDto>(payload))
+        );
     }, [turbineId]);
 
-    return useLiveQuery<TelemetryPointDto[]>(subscribe, { eventType: "TelemetryUpdate" });
+    return { data };
 }
 
 export function useAlertsLive(turbineId: string) {
-    const subscribe = useCallback(async (connectionId: string) => {
-        if (!turbineId) return { group: undefined, data: undefined as AlertDto[] | undefined };
-        return await api.alertsRealtime.getAlerts(connectionId, turbineId);
+    const [data, setData] = useState<AlertDto[] | null>(null);
+
+    useEffect(() => {
+        if (!turbineId) { setData(null); return; }
+        return sseClient.listen(
+            async (id) => await api.alertsRealtime.getAlerts(id, turbineId),
+            (payload) => setData(unwrapList<AlertDto>(payload))
+        );
     }, [turbineId]);
 
-    return useLiveQuery<AlertDto[]>(subscribe, { eventType: "AlertsUpdate" });
+    return { data };
+}
+
+export function useAlertsLiveAll() {
+    const [data, setData] = useState<AlertDto[] | null>(null);
+
+    useEffect(() => {
+        return sseClient.listen(
+            async (id) => await api.alertsRealtime.getAlerts(id, undefined),
+            (payload) => setData(unwrapList<AlertDto>(payload))
+        );
+    }, []);
+
+    return { data };
 }
 
 export function useAlertsLiveWithToast(turbineId: string) {
-    const base = useAlertsLive(turbineId);
+    const [data, setData] = useState<AlertDto[] | null>(null);
     const seenIds = useRef(new Set<number>());
     const initialized = useRef(false);
 
@@ -33,41 +70,44 @@ export function useAlertsLiveWithToast(turbineId: string) {
     }, [turbineId]);
 
     useEffect(() => {
-        const list = base.data;
-        if (!list) return;
+        if (!turbineId) { setData(null); return; }
+        return sseClient.listen(
+            async (id) => await api.alertsRealtime.getAlerts(id, turbineId),
+            (payload) => {
+                const list = unwrapList<AlertDto>(payload);
+                setData(list);
 
-        if (!initialized.current) {
-            list.forEach(a => { if (a.id != null) seenIds.current.add(a.id); });
-            initialized.current = true;
-            return;
-        }
+                if (!initialized.current) {
+                    list.forEach(a => { if (a.id != null) seenIds.current.add(a.id); });
+                    initialized.current = true;
+                    return;
+                }
 
-        const fresh = list.filter(a => a.id != null && !seenIds.current.has(a.id));
-        fresh.forEach(a => seenIds.current.add(a.id!));
-        fresh.slice(0, 3).forEach(a => {
-            const sev = (a.severity ?? "").toLowerCase();
-            const msg = `${a.turbineId ?? "turbine"}: ${a.message ?? "alert"}`;
-            if (sev === "critical") toast.error(msg);
-            else toast(msg, { icon: "⚠️" });
-        });
-    }, [base.data]);
+                const fresh = list.filter(a => a.id != null && !seenIds.current.has(a.id));
+                fresh.forEach(a => seenIds.current.add(a.id!));
+                fresh.slice(0, 3).forEach(a => {
+                    const sev = (a.severity ?? "").toLowerCase();
+                    const msg = `${a.turbineId ?? "turbine"}: ${a.message ?? "alert"}`;
+                    if (sev === "critical") toast.error(msg);
+                    else toast(msg, { icon: "⚠️" });
+                });
+            }
+        );
+    }, [turbineId]);
 
-    return base;
+    return { data };
 }
 
 export function useActionsLive(turbineId: string) {
-    const subscribe = useCallback(async (connectionId: string) => {
-        if (!turbineId) return { group: undefined, data: undefined as OperatorActionDto[] | undefined };
-        return await api.actionsRealtime.getActions(connectionId, turbineId);
+    const [data, setData] = useState<OperatorActionDto[] | null>(null);
+
+    useEffect(() => {
+        if (!turbineId) { setData(null); return; }
+        return sseClient.listen(
+            async (id) => await api.actionsRealtime.getActions(id, turbineId),
+            (payload) => setData(unwrapList<OperatorActionDto>(payload))
+        );
     }, [turbineId]);
 
-    return useLiveQuery<OperatorActionDto[]>(subscribe, { eventType: "ActionsUpdate" });
-}
-
-export function useAlertsLiveAll() {
-    const subscribe = useCallback(async (connectionId: string) => {
-        return await api.alertsRealtime.getAlerts(connectionId, undefined);
-    }, []);
-
-    return useLiveQuery<AlertDto[]>(subscribe, { eventType: "AlertsUpdate" });
+    return { data };
 }
