@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Api.DTO;
 using dataAccess;
 using dataAccess.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StateleSSE.AspNetCore;
@@ -17,6 +18,7 @@ public sealed class ActionsRealtimeController(
     AppOptions opts
 ) : ControllerBase
 {
+    [Authorize]
     [HttpGet(nameof(GetActions))]
     public async Task<RealtimeListenResponse<List<OperatorActionDto>>> GetActions(
         string connectionId,

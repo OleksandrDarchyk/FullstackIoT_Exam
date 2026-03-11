@@ -3,6 +3,7 @@ import { StateleSSEClient } from "statele-sse";
 import toast from "react-hot-toast";
 import { api } from "@api/api";
 import { SSE_URL } from "@api/config";
+import { useAuthToken } from "@auth/jwt";
 import type { AlertDto, OperatorActionDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
 
 const sseClient = new StateleSSEClient(SSE_URL);
@@ -100,14 +101,15 @@ export function useAlertsLiveWithToast(turbineId: string) {
 
 export function useActionsLive(turbineId: string) {
     const [data, setData] = useState<OperatorActionDto[] | null>(null);
+    const token = useAuthToken();
 
     useEffect(() => {
-        if (!turbineId) { setData(null); return; }
+        if (!turbineId || !token) { setData(null); return; }
         return sseClient.listen(
             async (id) => await api.actionsRealtime.getActions(id, turbineId),
             (payload) => setData(unwrapList<OperatorActionDto>(payload))
         );
-    }, [turbineId]);
+    }, [turbineId, token]);
 
     return { data };
 }

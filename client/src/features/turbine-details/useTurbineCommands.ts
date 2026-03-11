@@ -2,12 +2,12 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "@api/api";
 import { showApiError } from "@api/customFetch";
-import { isLoggedIn } from "@auth/jwt";
+import { useAuthToken } from "@auth/jwt";
 import type { TurbineCommand } from "./types";
 
 export function useTurbineCommands(turbineId: string) {
     const [sending, setSending] = useState(false);
-    const loggedIn = isLoggedIn();
+    const loggedIn = !!useAuthToken();
 
     async function sendCommand(command: TurbineCommand) {
         if (!loggedIn) {

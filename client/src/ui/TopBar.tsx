@@ -1,9 +1,9 @@
 import { Link, useNavigate } from "react-router-dom";
-import { clearJwt, isLoggedIn } from "@auth/jwt";
+import { clearJwt, useAuthToken } from "@auth/jwt";
 
 export default function TopBar() {
     const nav = useNavigate();
-    const loggedIn = isLoggedIn();
+    const loggedIn = !!useAuthToken();
 
     function logout() {
         clearJwt();

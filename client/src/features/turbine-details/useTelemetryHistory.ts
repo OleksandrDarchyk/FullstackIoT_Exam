@@ -50,7 +50,11 @@ export function useTelemetryHistory(turbineId: string, livePoints?: TelemetryPoi
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!turbineId) return;
+        if (!turbineId) {
+            setPoints([]);
+            setLoading(false);
+            return;
+        }
         const fromIso = new Date(Date.now() - RANGE_MS[range]).toISOString();
         setLoading(true);
         api.telemetryHistory

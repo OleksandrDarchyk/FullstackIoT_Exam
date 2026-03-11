@@ -10,6 +10,7 @@ import { hhmmss, timeAgo } from "../utils/time";
 import type { TurbineDto, TelemetryPointDto } from "@api/generated/generated-ts-client";
 import type { TurbineCommand } from "@features/turbine-details/types";
 
+import { useActionsHistory } from "@features/turbine-details/useActionsHistory";
 import { useAlertHistory } from "@features/turbine-details/useAlertHistory";
 import { useTelemetryHistory } from "@features/turbine-details/useTelemetryHistory";
 import { useTurbineCommands } from "@features/turbine-details/useTurbineCommands";
@@ -40,15 +41,34 @@ export default function TurbineDetailsPage() {
     const [turbine, setTurbine] = useState<TurbineDto | null>(null);
 
     useEffect(() => {
-        if (!id) return;
+        if (!id) { setTurbine(null); return; }
         api.turbines.getAll()
             .then((all) => setTurbine((all ?? []).find((x) => x.turbineId === id) ?? null))
             .catch(showApiError);
     }, [id]);
 
-    const { data: actions } = useActionsLive(id);
+    // Actions: initial/full history from REST, live SSE updates take precedence when available.
+    const { actions: historyActions } = useActionsHistory(id);
+    const { data: liveActions } = useActionsLive(id);
+    const actionsToShow = liveActions ?? historyActions;
+
     const telemetry = useTelemetryHistory(id, telemetryList);
     const alertHist = useAlertHistory(id);
+    const [alertsPreset, setAlertsPreset] = useState<"24h" | "7d">("24h");
+    const ALERTS_PRESET_MS: Record<"24h" | "7d", number> = { "24h": 86_400_000, "7d": 7 * 86_400_000 };
+    const alertsCutoff = Date.now() - ALERTS_PRESET_MS[alertsPreset];
+    const recentAlerts = (liveAlerts ?? [])
+        .slice()
+        .sort((a, b) => new Date(b.ts ?? 0).getTime() - new Date(a.ts ?? 0).getTime())
+        .filter(a => a.ts != null && new Date(a.ts).getTime() >= alertsCutoff)
+        .filter((a, i, arr) =>
+            arr.findIndex(b =>
+                b.turbineId === a.turbineId &&
+                b.message === a.message &&
+                b.severity === a.severity
+            ) === i
+        )
+        .slice(0, 5);
     const { sendCommand, loggedIn, sending } = useTurbineCommands(id);
 
     const onSendCommand = useCallback(async (cmd: TurbineCommand) => {
@@ -98,18 +118,22 @@ export default function TurbineDetailsPage() {
                             <div className="card-body">
                                 <h2 className="card-title">Live Metrics</h2>
                                 <div className="divider" />
-                                <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
-                                    <MetricTile label="Wind"      value={latest?.windSpeed}         unit="m/s" />
-                                    <MetricTile label="Power"     value={latest?.powerOutput}        unit="MW"  />
-                                    <MetricTile label="Rotor"     value={latest?.rotorSpeed}         unit="rpm" />
-                                    <MetricTile label="Gen Temp"  value={latest?.generatorTemp}      unit="°C"  />
-                                    <MetricTile label="Gearbox"   value={latest?.gearboxTemp}        unit="°C"  />
-                                    <MetricTile label="Vibration" value={latest?.vibration}          unit=""    />
-                                    <MetricTile label="Pitch"     value={latest?.bladePitch}         unit="°"   />
-                                    <MetricTile label="Wind Dir"  value={latest?.windDirection}      unit="°"   />
-                                    <MetricTile label="Ambient"   value={latest?.ambientTemperature} unit="°C"  />
-                                    <MetricTile label="Nacelle"   value={latest?.nacelleDirection}   unit="°"   />
-                                </div>
+                                {telemetryList === null ? (
+                                    <div className="opacity-70">Loading live metrics…</div>
+                                ) : (
+                                    <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 xl:grid-cols-5">
+                                        <MetricTile label="Wind"      value={latest?.windSpeed}         unit="m/s" />
+                                        <MetricTile label="Power"     value={latest?.powerOutput}        unit="MW"  />
+                                        <MetricTile label="Rotor"     value={latest?.rotorSpeed}         unit="rpm" />
+                                        <MetricTile label="Gen Temp"  value={latest?.generatorTemp}      unit="°C"  />
+                                        <MetricTile label="Gearbox"   value={latest?.gearboxTemp}        unit="°C"  />
+                                        <MetricTile label="Vibration" value={latest?.vibration}          unit=""    />
+                                        <MetricTile label="Pitch"     value={latest?.bladePitch}         unit="°"   />
+                                        <MetricTile label="Wind Dir"  value={latest?.windDirection}      unit="°"   />
+                                        <MetricTile label="Ambient"   value={latest?.ambientTemperature} unit="°C"  />
+                                        <MetricTile label="Nacelle"   value={latest?.nacelleDirection}   unit="°"   />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -133,17 +157,30 @@ export default function TurbineDetailsPage() {
                             status={effectiveStatus}
                         />
 
-                        {/* Live alerts */}
+                        {/* Recent alerts */}
                         <div className="card bg-base-100 shadow">
                             <div className="card-body">
-                                <h2 className="card-title">Live Alerts</h2>
+                                <div className="flex items-center justify-between">
+                                    <h2 className="card-title">Recent Alerts</h2>
+                                    <div className="join">
+                                        {(["24h", "7d"] as const).map(p => (
+                                            <button
+                                                key={p}
+                                                className={`join-item btn btn-xs ${alertsPreset === p ? "btn-primary" : "btn-ghost"}`}
+                                                onClick={() => setAlertsPreset(p)}
+                                            >{p}</button>
+                                        ))}
+                                    </div>
+                                </div>
                                 <div className="divider" />
 
-                                {!liveAlerts || liveAlerts.length === 0 ? (
-                                    <div className="opacity-70">No alerts</div>
+                                {liveAlerts === null ? (
+                                    <div className="opacity-70">Loading…</div>
+                                ) : recentAlerts.length === 0 ? (
+                                    <div className="opacity-70">No alerts in this period</div>
                                 ) : (
                                     <div className="grid gap-2">
-                                        {liveAlerts.slice(0, 10).map((a) => (
+                                        {recentAlerts.map((a) => (
                                             <div key={String(a.id)} className="card bg-base-200">
                                                 <div className="card-body p-4">
                                                     <div className="flex items-center justify-between gap-3">
@@ -163,7 +200,13 @@ export default function TurbineDetailsPage() {
                     </div>
                 </div>
 
-                <ActionsTable actions={actions ?? []} />
+                {/*
+                  Actions architecture:
+                  - Initial/full history: GET /api/turbines/{turbineId}/actions (historyActions)
+                  - Live updates after initial load: GET /GetActions via SSE (liveActions)
+                  - liveActions takes precedence — it always returns a fresh full list on any change.
+                */}
+                <ActionsTable actions={actionsToShow} />
 
                 <AlertHistoryPanel
                     alertHistory={alertHist.alertHistory}
