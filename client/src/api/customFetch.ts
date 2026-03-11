@@ -18,11 +18,13 @@ export async function customFetch(url: RequestInfo, init?: RequestInit): Promise
     }
 
     if (res.status === 401) {
-        clearJwt();
-        toast.error("Session expired. Please sign in again.");
+        const hadToken = !!getJwt();
+        clearJwt(); // also dispatches auth:logout (see jwt.ts)
+        if (hadToken) {
+            toast.error("Session expired. Please sign in again.");
+        }
     }
 
-    // Don't show a toast here — NSwag may throw ApiException with more detail later.
     return res;
 }
 
@@ -32,6 +34,9 @@ export const customHttp = { fetch: customFetch };
 // Extracts a readable message from NSwag ApiException / ProblemDetails and shows a toast.
 export function showApiError(err: unknown) {
     if (ApiException.isApiException(err)) {
+        // 401 is already handled by customFetch (toast + clearJwt); avoid a duplicate toast.
+        if (err.status === 401) return;
+
         // err.response is raw text — try to parse it as ProblemDetails JSON.
         try {
             const parsed = JSON.parse(err.response);

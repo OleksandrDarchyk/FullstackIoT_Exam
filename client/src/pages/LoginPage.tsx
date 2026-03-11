@@ -36,9 +36,9 @@ export default function LoginPage() {
                     <div>
                         <h1 className="card-title text-2xl">Sign in to manage turbines.</h1>
                         <p className="text-sm opacity-60 mt-1">
-                            You can view live data and history without signing in.
+                            You can monitor turbines, view telemetry graphs, and see alerts without signing in.
                             <br />
-                            Signing in is required to send commands (start/stop, pitch, interval).
+                            Sign in is required to send commands and view operator action history.
                         </p>
                     </div>
 

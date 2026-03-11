@@ -80,16 +80,11 @@ export default function TurbinesPage() {
     const { data: alerts } = useAlertsLiveAll();
 
     useEffect(() => {
-        (async () => {
-            try {
-                const res = await api.turbines.getAll();
-                setTurbines(res ?? []);
-            } catch (e) {
-                showApiError(e);
-            } finally {
-                setLoading(false);
-            }
-        })();
+        setLoading(true);
+        api.turbines.getAll()
+            .then((res) => setTurbines(res ?? []))
+            .catch(showApiError)
+            .finally(() => setLoading(false));
     }, []);
 
     return (
@@ -120,7 +115,9 @@ export default function TurbinesPage() {
 
                             <div className="divider" />
 
-                            {!alerts || alerts.length === 0 ? (
+                            {alerts === null ? (
+                                <div className="opacity-70">Loading…</div>
+                            ) : alerts.length === 0 ? (
                                 <div className="opacity-70">No active alerts</div>
                             ) : (
                                 <div className="grid gap-2">

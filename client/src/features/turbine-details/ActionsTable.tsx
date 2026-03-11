@@ -2,7 +2,7 @@ import type { OperatorActionDto } from "@api/generated/generated-ts-client";
 import { hhmmss } from "@utils/time";
 
 interface Props {
-    actions: OperatorActionDto[];
+    actions: OperatorActionDto[] | null;
 }
 
 function parseParams(payloadJson?: string): string {
@@ -32,7 +32,9 @@ export function ActionsTable({ actions }: Props) {
                 <h2 className="card-title">Operator Actions</h2>
                 <div className="divider" />
 
-                {actions.length === 0 ? (
+                {actions === null ? (
+                    <div className="opacity-70">Sign in to view operator actions</div>
+                ) : actions.length === 0 ? (
                     <div className="opacity-70">No actions yet</div>
                 ) : (
                     <div className="overflow-x-auto">

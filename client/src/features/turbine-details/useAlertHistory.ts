@@ -16,7 +16,11 @@ export function useAlertHistory(turbineId: string) {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (!turbineId) return;
+        if (!turbineId) {
+            setAlertHistory([]);
+            setLoading(false);
+            return;
+        }
         const fromIso = new Date(Date.now() - PRESET_MS[preset]).toISOString();
         setLoading(true);
         api.alertsHistory
