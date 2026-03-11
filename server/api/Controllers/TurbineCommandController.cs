@@ -34,7 +34,8 @@ public sealed class TurbineCommandController(
         if (string.IsNullOrWhiteSpace(turbineId))
             throw new ValidationException("turbineId is required");
 
-        ValidateCommand(command);
+        var canonicalAction = ValidateCommand(command);
+        command = command with { Action = canonicalAction };
 
         var userGuid = User.GetUserId();
 
@@ -45,6 +46,18 @@ public sealed class TurbineCommandController(
             throw new ValidationException(
                 $"Unknown turbineId '{turbineId}' for farm '{opts.FarmId}'. Did you run seed on startup?");
 
+        var currentStatus = await db.Telemetry
+            .AsNoTracking()
+            .Where(t => t.FarmId == opts.FarmId && t.TurbineId == turbineId)
+            .OrderByDescending(t => t.Ts)
+            .Select(t => t.Status)
+            .FirstOrDefaultAsync(ct);
+
+        if (canonicalAction == "start" && currentStatus == "running")
+            throw new ValidationException("You cannot start an already running windmill");
+        if (canonicalAction == "stop" && currentStatus == "stopped")
+            throw new ValidationException("You cannot stop an already stopped windmill");
+
         var payloadJson = JsonSerializer.Serialize(command, _camelCase);
 
         var row = new OperatorAction
@@ -53,7 +66,7 @@ public sealed class TurbineCommandController(
             FarmId = opts.FarmId,
             TurbineId = turbineId,
             UserId = userGuid,
-            Action = command.Action,
+            Action = canonicalAction,
             PayloadJson = payloadJson,
             RequestedAt = DateTimeOffset.UtcNow,
             Status = "Requested"
@@ -84,7 +97,7 @@ public sealed class TurbineCommandController(
         }
     }
 
-    private static void ValidateCommand(CommandRequestDto command)
+    private static string ValidateCommand(CommandRequestDto command)
     {
         if (string.IsNullOrWhiteSpace(command.Action))
             throw new ValidationException("'action' is required");
@@ -97,7 +110,7 @@ public sealed class TurbineCommandController(
                     throw new ValidationException("setInterval requires 'value'");
                 if (command.Value < 1 || command.Value > 60)
                     throw new ValidationException("setInterval value must be 1..60 seconds");
-                break;
+                return "setInterval";
             }
 
             case "setpitch":
@@ -106,12 +119,14 @@ public sealed class TurbineCommandController(
                     throw new ValidationException("setPitch requires 'angle'");
                 if (command.Angle < 0 || command.Angle > 30)
                     throw new ValidationException("setPitch angle must be 0..30 degrees");
-                break;
+                return "setPitch";
             }
 
             case "stop":
+                return "stop";
+
             case "start":
-                break;
+                return "start";
 
             default:
                 throw new ValidationException("Unknown action. Allowed: setInterval, stop, start, setPitch");
