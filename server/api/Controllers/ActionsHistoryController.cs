@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Api.DTO;
 using dataAccess;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,7 @@ namespace Api.Controllers;
 [Route("api/turbines/{turbineId}/actions")]
 public sealed class ActionsHistoryController(WindmillDbContext db, AppOptions opts) : ControllerBase
 {
+    [Authorize]
     [HttpGet]
     public Task<List<OperatorActionDto>> GetActions(
         [FromRoute] string turbineId,

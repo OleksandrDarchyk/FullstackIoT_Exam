@@ -10,6 +10,7 @@ using StateleSSE.AspNetCore.EfRealtime;
 namespace Api.Controllers;
 
 [ApiController]
+[Route("")]
 public sealed class TelemetryRealtimeController(
     ISseBackplane backplane,
     IRealtimeManager realtimeManager,
@@ -17,13 +18,6 @@ public sealed class TelemetryRealtimeController(
     AppOptions opts
 ) : ControllerBase
 {
-    private static TelemetryPointDto ToDto(TelemetryRecord x) => new(
-        x.TurbineId, x.Ts,
-        x.WindSpeed, x.WindDirection, x.AmbientTemperature,
-        x.PowerOutput, x.RotorSpeed, x.NacelleDirection,
-        x.GeneratorTemp, x.GearboxTemp, x.Vibration,
-        x.BladePitch, x.Status);
-
     [HttpGet(nameof(GetTelemetry))]
     public async Task<RealtimeListenResponse<List<TelemetryPointDto>>> GetTelemetry(
         string connectionId,
