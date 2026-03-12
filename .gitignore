@@ -6,6 +6,7 @@
 # dotenv files
 .env*
 appsettings.*.json
+!appsettings.Development.json
 **/openapi*.json
 
 # User-specific files
