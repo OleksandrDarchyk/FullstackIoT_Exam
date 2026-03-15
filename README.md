@@ -9,6 +9,10 @@ FS+IoT is a full-stack IoT monitoring and control system for wind turbines. It p
 
 ---
 
+**Farm ID (production):** `D5E09CD5-9AEC-436B-92F7-7715BC7AE4B3`
+
+---
+
 ## Login
 
 **Operator (development seed user)**
@@ -96,16 +100,6 @@ git clone https://github.com/OleksandrDarchyk/FullstackIoT_Exam.git
 | 4 | Open in browser | Frontend: http://localhost:5173 |
 
 > On first run, migrations are applied and seed data (farm, turbines, test user) is inserted automatically.
-
----
-
-## MQTT Topics
-
-| Direction | Topic | Description |
-|---|---|---|
-| Subscribe | `farm/{farmId}/windmill/{turbineId}/telemetry` | Live sensor measurements |
-| Subscribe | `farm/{farmId}/windmill/{turbineId}/alert` | Threshold alerts |
-| Publish | `farm/{farmId}/windmill/{turbineId}/command` | Control commands |
 
 ---
 
